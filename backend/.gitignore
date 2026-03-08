@@ -1,0 +1,15 @@
+# Backend build artifacts
+build/
+.gradle/
+out/
+*.class
+*.jar
+*.war
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Environment
+.env

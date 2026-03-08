@@ -1,0 +1,14 @@
+# Firmware build artifacts
+.pio/
+.pioenvs/
+.piobuild/
+.piolibdeps/
+.vscode/
+.idea/
+
+# Compiled files
+*.o
+*.elf
+*.bin
+*.hex
+*.map
