@@ -3,8 +3,11 @@ build/
 .gradle/
 out/
 *.class
-*.jar
 *.war
+
+# Jar files (except Gradle wrapper)
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
 
 # IDE
 .idea/
