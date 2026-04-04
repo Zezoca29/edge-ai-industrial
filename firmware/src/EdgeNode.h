@@ -1,8 +1,8 @@
 #pragma once
-#include "sensors/sensor_manager.h"
-#include "inference/inference_engine.h"
-#include "communication/wifi_manager.h"
-#include "communication/mqtt_client.h"
+#include "sensor_manager.h"
+#include "inference_engine.h"
+#include "wifi_manager.h"
+#include "mqtt_client.h"
 
 class EdgeNode {
 public:

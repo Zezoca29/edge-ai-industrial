@@ -3,6 +3,7 @@
 #ifndef NATIVE_TEST
 
 #include <Arduino.h>
+#include <WiFi.h>
 #include <ArduinoJson.h>
 #include <time.h>
 

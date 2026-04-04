@@ -3,7 +3,7 @@
 #if defined(NATIVE_TEST)
 #include "../config/device_config.h"
 #else
-#include "config/device_config.h"
+#include "device_config.h"
 #endif
 
 class InferenceEngine {
