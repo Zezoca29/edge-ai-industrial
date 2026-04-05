@@ -163,3 +163,41 @@ Com o pipeline de treinamento implementado, as próximas etapas do backlog são:
 - **D4 — Backend de ingestão** (Spring Boot): consumir mensagens MQTT do simulador e persistir no PostgreSQL/TimescaleDB.
 - **Treinamento com dados reais**: quando o backend estiver operacional, usar `--from-db` para treinar o modelo com leituras reais dos dispositivos, melhorando a generalização.
 - **Integração OTA** (fora do escopo atual): atualizar o modelo no ESP32 sem reflashing físico.
+
+---
+
+## Referências Bibliográficas
+
+### Livros e Artigos
+
+WARDEN, Pete; SITUNAYAKE, Daniel. **TinyML: Machine Learning with TensorFlow Lite on Arduino and Ultra-Low-Power Microcontrollers**. Sebastopol: O'Reilly Media, 2020. 504 p. ISBN 978-1492052043.
+
+DAVID, Robert et al. **TensorFlow Lite Micro: Embedded Machine Learning on TinyML Systems**. In: Proceedings of Machine Learning and Systems, v. 3, p. 800–811, 2021. Disponível em: https://proceedings.mlsys.org/paper/2021/hash/d2ddea18f00665ce8623e36bd4e3c7c5-Abstract.html
+
+GOODFELLOW, Ian; BENGIO, Yoshua; COURVILLE, Aaron. **Deep Learning**. Cambridge: MIT Press, 2016. 800 p. ISBN 978-0262035613. Disponível em: https://www.deeplearningbook.org
+
+CHANDOLA, Varun; BANERJEE, Arindam; KUMAR, Vipin. Anomaly Detection: A Survey. **ACM Computing Surveys**, v. 41, n. 3, p. 1–58, jul. 2009. DOI: 10.1145/1541880.1541882.
+
+SHI, Weisong et al. Edge Computing: Vision and Challenges. **IEEE Internet of Things Journal**, v. 3, n. 5, p. 637–646, out. 2016. DOI: 10.1109/JIOT.2016.2579198.
+
+### Frameworks e Bibliotecas
+
+ABADI, Martín et al. **TensorFlow: Large-Scale Machine Learning on Heterogeneous Systems**. 2015. Software disponível em: https://www.tensorflow.org. Acesso em: 05 abr. 2026.
+
+CHOLLET, François et al. **Keras**. 2015. Disponível em: https://keras.io. Acesso em: 05 abr. 2026.
+
+HARRIS, Charles R. et al. Array programming with NumPy. **Nature**, v. 585, p. 357–362, 2020. DOI: 10.1038/s41586-020-2649-2.
+
+PEDREGOSA, Fabian et al. Scikit-learn: Machine Learning in Python. **Journal of Machine Learning Research**, v. 12, p. 2825–2830, 2011. Disponível em: https://jmlr.org/papers/v12/pedregosa11a.html
+
+### Protocolos e Padrões
+
+OASIS. **MQTT Version 5.0: OASIS Standard**. OASIS Open, 07 mar. 2019. Disponível em: https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html. Acesso em: 05 abr. 2026.
+
+### Documentações Técnicas
+
+ESPRESSIF SYSTEMS. **ESP32 Technical Reference Manual**. v5.2. Xangai, 2024. Disponível em: https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf. Acesso em: 05 abr. 2026.
+
+PLATFORMIO LABS. **PlatformIO Documentation**. 2024. Disponível em: https://docs.platformio.org. Acesso em: 05 abr. 2026.
+
+BLANCHON, Benoît. **ArduinoJson: Efficient JSON for Embedded Systems**. Disponível em: https://arduinojson.org. Acesso em: 05 abr. 2026.
