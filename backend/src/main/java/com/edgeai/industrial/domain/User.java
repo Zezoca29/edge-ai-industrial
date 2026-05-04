@@ -30,10 +30,10 @@ public class User {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false, length = 20)
+    @Column(length = 20)
     private String role = "viewer";
 
-    @Column(nullable = false)
+    @Column
     private Boolean active = true;
 
     @Column(name = "created_at", updatable = false)

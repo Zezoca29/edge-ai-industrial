@@ -32,7 +32,7 @@ public class Device {
 
     private String location;
 
-    @Column(nullable = false, length = 20)
+    @Column(length = 20)
     private String status = "inactive";
 
     @Column(name = "last_seen_at")
