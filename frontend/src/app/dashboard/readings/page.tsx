@@ -1,59 +1,43 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
-} from 'recharts';
 import { SensorReading } from '@/types';
 import { apiClient } from '@/services/apiClient';
 import { usePolling } from '@/hooks/usePolling';
-
-function formatTime(isoString: string) {
-  return new Date(isoString).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-}
+import SensorChart from '@/components/SensorChart';
 
 export default function ReadingsPage() {
   const [readings, setReadings] = useState<SensorReading[]>([]);
+  const [loading, setLoading] = useState(true);
 
   usePolling(() => {
-    apiClient.getLatestReadings()
-      .then(setReadings)
-      .catch(console.error);
-  }, 10000);
-
-  const chartData = readings
-    .filter((r) => r.sensorType === 'temperature')
-    .slice(0, 50)
-    .map((r) => ({
-      time: formatTime(r.time),
-      temperature: r.value,
-    }));
+    const to = new Date().toISOString();
+    const from = new Date(Date.now() - 3_600_000).toISOString();
+    apiClient
+      .getReadings('', from, to)
+      .then((data) => {
+        setReadings(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, 5000);
 
   return (
     <div>
       <h1 className="text-xl font-semibold mb-6 text-white">Leituras de Sensores</h1>
-      <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-        <h2 className="text-sm text-gray-400 mb-4">Temperatura (°C) — últimas leituras</h2>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-            <XAxis dataKey="time" stroke="#9ca3af" tick={{ fontSize: 11 }} />
-            <YAxis stroke="#9ca3af" tick={{ fontSize: 11 }} />
-            <Tooltip
-              contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151' }}
-              labelStyle={{ color: '#e5e7eb' }}
-            />
-            <Legend />
-            <Line
-              type="monotone"
-              dataKey="temperature"
-              stroke="#60a5fa"
-              dot={false}
-              strokeWidth={2}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+      {loading ? (
+        <p className="text-gray-400 text-sm">Carregando leituras...</p>
+      ) : (
+        <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+          <h2 className="text-sm text-gray-400 mb-4">
+            Temperatura · Vibração · Corrente — última hora
+          </h2>
+          <SensorChart readings={readings} />
+        </div>
+      )}
     </div>
   );
 }
