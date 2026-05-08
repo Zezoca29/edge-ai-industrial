@@ -3,8 +3,8 @@ package com.edgeai.industrial.mqtt;
 import com.edgeai.industrial.dto.DeviceStatusDto;
 import com.edgeai.industrial.dto.SensorPayloadDto;
 import com.edgeai.industrial.domain.Device;
+import com.edgeai.industrial.kafka.SensorProducer;
 import com.edgeai.industrial.service.DeviceService;
-import com.edgeai.industrial.service.SensorService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +20,7 @@ public class MqttSubscriber {
 
     private final ObjectMapper objectMapper;
     private final DeviceService deviceService;
-    private final SensorService sensorService;
+    private final SensorProducer sensorProducer;
 
     @ServiceActivator(inputChannel = "mqttInputChannel")
     public void handleMessage(Message<?> message) {
@@ -40,12 +40,8 @@ public class MqttSubscriber {
 
     private void handleSensorData(String payload) throws Exception {
         SensorPayloadDto dto = objectMapper.readValue(payload, SensorPayloadDto.class);
-        String firmwareVersion = dto.getInference() != null ? dto.getInference().getModelVersion() : "unknown";
-        Device device = deviceService.findOrCreate(dto.getDeviceId(), firmwareVersion);
-        deviceService.markOnline(device);
-        sensorService.saveSensorPayload(device, dto);
-        log.info("Saved sensor data from device {} — classification: {}",
-                dto.getDeviceId(), dto.getInference().getClassification());
+        log.info("MQTT received from device {} — forwarding to Kafka", dto.getDeviceId());
+        sensorProducer.send(dto);
     }
 
     private void handleDeviceStatus(String payload) throws Exception {
