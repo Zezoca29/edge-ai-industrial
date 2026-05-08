@@ -39,7 +39,7 @@ mqtt:
 
 # JWT
 jwt:
-  secret: ${JWT_SECRET:change-this-in-production}
+  secret: ${JWT_SECRET:Y2hhbmdlLXRoaXMtaW4tcHJvZHVjdGlvbi1rZXktMzI=}
   expiration: ${JWT_EXPIRATION:86400000}
 
 # Actuator
