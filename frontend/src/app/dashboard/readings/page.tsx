@@ -12,7 +12,7 @@ export default function ReadingsPage() {
 
   usePolling(() => {
     apiClient
-      .getLatestReadings()
+      .getRecentReadings(60)
       .then((data) => {
         setReadings(data);
         setLoading(false);

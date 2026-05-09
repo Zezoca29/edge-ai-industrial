@@ -37,6 +37,12 @@ public class SensorController {
         return ResponseEntity.ok(sensorService.getLatestPerDevice());
     }
 
+    @GetMapping("/recent")
+    public ResponseEntity<List<SensorReadingDto>> getRecent(
+            @RequestParam(defaultValue = "60") int minutes) {
+        return ResponseEntity.ok(sensorService.getRecentReadings(minutes));
+    }
+
     @GetMapping("/anomalies")
     public ResponseEntity<List<SensorReadingDto>> getAnomalies() {
         return ResponseEntity.ok(sensorService.getAnomalies());

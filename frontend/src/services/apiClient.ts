@@ -29,6 +29,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 export const apiClient = {
   getDevices: () => request<import('@/types').Device[]>('/devices'),
   getLatestReadings: () => request<import('@/types').SensorReading[]>('/sensors/latest'),
+  getRecentReadings: (minutes = 60) => request<import('@/types').SensorReading[]>(`/sensors/recent?minutes=${minutes}`),
   getReadings: (deviceId: string, from: string, to: string) =>
     request<import('@/types').SensorReading[]>(
       `/sensors/readings?deviceId=${deviceId}&from=${from}&to=${to}`

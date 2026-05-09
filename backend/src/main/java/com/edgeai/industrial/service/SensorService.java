@@ -46,6 +46,10 @@ public class SensorService {
         return sensorDataRepository.findLatestPerDevice();
     }
 
+    public List<SensorReadingDto> getRecentReadings(int minutes) {
+        return sensorDataRepository.findRecent(minutes, 1500);
+    }
+
     public List<SensorReadingDto> getAnomalies() {
         return sensorDataRepository.findAnomalies(100);
     }

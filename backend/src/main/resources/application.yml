@@ -9,6 +9,10 @@ spring:
     password: ${DB_PASSWORD:edgeai}
     driver-class-name: org.postgresql.Driver
 
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
   jpa:
     hibernate:
       ddl-auto: validate

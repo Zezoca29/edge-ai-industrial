@@ -62,6 +62,20 @@ public class SensorDataRepository {
                 rowMapper());
     }
 
+    public List<SensorReadingDto> findRecent(int minutes, int limit) {
+        return jdbc.query("""
+                SELECT sd.time, sd.device_id, d.name AS device_name,
+                       sd.sensor_type, sd.value, sd.unit,
+                       sd.classification, sd.anomaly_score
+                FROM sensor_data sd
+                JOIN devices d ON d.id = sd.device_id
+                WHERE sd.time >= NOW() - (? * INTERVAL '1 minute')
+                ORDER BY sd.time ASC
+                LIMIT ?
+                """,
+                rowMapper(), minutes, limit);
+    }
+
     public List<SensorReadingDto> findAnomalies(int limit) {
         return jdbc.query("""
                 SELECT sd.time, sd.device_id, d.name AS device_name,
