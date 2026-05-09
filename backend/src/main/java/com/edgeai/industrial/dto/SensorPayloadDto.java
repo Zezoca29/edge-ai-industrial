@@ -16,11 +16,15 @@ public class SensorPayloadDto {
 
     private Inference inference;
 
+    @JsonProperty("pick_event")
+    private PickEvent pickEvent;
+
     @Data
     public static class Sensors {
         private SensorValue temperature;
         private SensorValue vibration;
         private SensorValue current;
+        private SensorValue weight;
     }
 
     @Data
@@ -38,5 +42,20 @@ public class SensorPayloadDto {
 
         @JsonProperty("model_version")
         private String modelVersion;
+    }
+
+    @Data
+    public static class PickEvent {
+        private boolean detected;
+
+        @JsonProperty("product_name")
+        private String productName;
+
+        private int quantity;
+
+        @JsonProperty("weight_delta_kg")
+        private double weightDeltaKg;
+
+        private double confidence;
     }
 }
