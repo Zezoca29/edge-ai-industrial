@@ -47,13 +47,14 @@
 -- Records each product retrieval detected by weight sensor
 
 CREATE TABLE IF NOT EXISTS pick_events (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id              UUID NOT NULL DEFAULT gen_random_uuid(),
     time            TIMESTAMPTZ NOT NULL,
     device_id       UUID NOT NULL REFERENCES devices(id),
     product_name    TEXT NOT NULL,
     quantity        INT NOT NULL,
     weight_delta_kg FLOAT NOT NULL,
-    confidence      FLOAT NOT NULL
+    confidence      FLOAT NOT NULL,
+    PRIMARY KEY (id, time)  -- composite PK required by TimescaleDB (partition column must be in PK)
 );
 
 SELECT create_hypertable('pick_events', 'time', if_not_exists => TRUE);
