@@ -6,7 +6,7 @@ interface AnomalyTableProps {
   anomalies: SensorReading[];
 }
 
-export default function AnomalyTable({ anomalies }: AnomalyTableProps) {
+export function AnomalyTable({ anomalies }: AnomalyTableProps) {
   if (anomalies.length === 0) {
     return (
       <p className="text-gray-400 text-sm">Nenhuma anomalia encontrada.</p>
@@ -27,7 +27,7 @@ export default function AnomalyTable({ anomalies }: AnomalyTableProps) {
         </thead>
         <tbody>
           {anomalies.map((a, i) => {
-            const scorePercent = (a.anomalyScore * 100).toFixed(1);
+            const scorePercent = (a.anomalyScore * 100).toFixed(0);
             const isHigh = a.anomalyScore >= 0.8;
             return (
               <tr key={i} className="border-b border-gray-700 hover:bg-gray-800">
@@ -37,7 +37,7 @@ export default function AnomalyTable({ anomalies }: AnomalyTableProps) {
                 <td className="py-2 pr-4 text-gray-300">{a.deviceName}</td>
                 <td className="py-2 pr-4 text-gray-300 capitalize">{a.sensorType}</td>
                 <td className="py-2 pr-4 text-gray-300">
-                  {a.value} {a.unit}
+                  {a.value.toFixed(2)} {a.unit}
                 </td>
                 <td className="py-2">
                   <span

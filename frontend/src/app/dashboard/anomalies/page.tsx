@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { SensorReading } from '@/types';
 import { apiClient } from '@/services/apiClient';
 import { usePolling } from '@/hooks/usePolling';
-import AnomalyTable from '@/components/AnomalyTable';
+import { AnomalyTable } from '@/components/AnomalyTable';
 
 export default function AnomaliesPage() {
   const [anomalies, setAnomalies] = useState<SensorReading[]>([]);

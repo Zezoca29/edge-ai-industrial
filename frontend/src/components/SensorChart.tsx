@@ -27,13 +27,8 @@ function formatTime(isoString: string): string {
   return `${hh}:${mm}:${ss}`;
 }
 
-interface SensorChartProps {
-  readings: SensorReading[];
-}
-
-export default function SensorChart({ readings }: SensorChartProps) {
+function buildChartData(readings: SensorReading[]): ChartPoint[] {
   const pointMap = new Map<string, ChartPoint>();
-
   for (const r of readings) {
     const timeKey = formatTime(r.time);
     if (!pointMap.has(timeKey)) {
@@ -44,8 +39,15 @@ export default function SensorChart({ readings }: SensorChartProps) {
     else if (r.sensorType === 'vibration') point.vibration = r.value;
     else if (r.sensorType === 'current') point.current = r.value;
   }
+  return Array.from(pointMap.values()).slice(-50);
+}
 
-  const chartData = Array.from(pointMap.values());
+interface SensorChartProps {
+  readings: SensorReading[];
+}
+
+export function SensorChart({ readings }: SensorChartProps) {
+  const chartData = buildChartData(readings);
 
   return (
     <ResponsiveContainer width="100%" height={300}>
