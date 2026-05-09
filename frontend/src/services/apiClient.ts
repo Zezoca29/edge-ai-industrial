@@ -16,6 +16,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
 
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+  if (res.status === 401 || res.status === 403) {
+    localStorage.removeItem('jwt_token');
+    document.cookie = 'jwt_token=; max-age=0; path=/';
+    window.location.href = '/login';
+    throw new Error('Unauthorized');
+  }
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.json();
 }
