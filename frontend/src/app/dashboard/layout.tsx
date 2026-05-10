@@ -14,6 +14,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <Link href="/dashboard/anomalies" className="text-sm text-gray-300 hover:text-white py-1">
           Anomalias
         </Link>
+        <Link href="/dashboard/picks" className="text-sm text-gray-300 hover:text-white py-1">
+          Retiradas
+        </Link>
       </nav>
       <main className="flex-1 p-6">{children}</main>
     </div>

@@ -35,6 +35,10 @@ export const apiClient = {
       `/sensors/readings?deviceId=${deviceId}&from=${from}&to=${to}`
     ),
   getAnomalies: () => request<import('@/types').SensorReading[]>('/sensors/anomalies'),
+  getRecentPicks: (hours = 24) =>
+    request<import('@/types').PickEvent[]>(`/picks/recent?hours=${hours}`),
+  getProductDemand: (hours = 168) =>
+    request<import('@/types').ProductDemand[]>(`/picks/demand?hours=${hours}`),
   login: (email: string, password: string) =>
     request<{ token: string }>('/auth/login', {
       method: 'POST',

@@ -14,7 +14,7 @@ export interface SensorReading {
   time: string;
   deviceId: string;
   deviceName: string;
-  sensorType: 'temperature' | 'vibration' | 'current';
+  sensorType: 'temperature' | 'vibration' | 'current' | 'weight';
   value: number;
   unit: string;
   classification: 'normal' | 'anomaly';
@@ -23,4 +23,21 @@ export interface SensorReading {
 
 export interface AnomalyRecord extends SensorReading {
   classification: 'anomaly';
+}
+
+export interface PickEvent {
+  time: string;
+  deviceId: string;
+  deviceName: string;
+  productName: string;
+  quantity: number;
+  weightDeltaKg: number;
+  confidence: number;
+}
+
+export interface ProductDemand {
+  productName: string;
+  totalPicks: number;
+  totalQuantity: number;
+  lastPick: string;
 }
