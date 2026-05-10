@@ -10,7 +10,8 @@
     { "type": "wokwi-led", "id": "led1", "top": -60, "left": -80, "attrs": { "color": "green", "label": "Normal" } },
     { "type": "wokwi-led", "id": "led2", "top": -10, "left": -80, "attrs": { "color": "red", "label": "Anomaly" } },
     { "type": "wokwi-resistor", "id": "r1", "top": -50, "left": -30, "attrs": { "value": "220" } },
-    { "type": "wokwi-resistor", "id": "r2", "top": 0, "left": -30, "attrs": { "value": "220" } }
+    { "type": "wokwi-resistor", "id": "r2", "top": 0, "left": -30, "attrs": { "value": "220" } },
+    { "type": "wokwi-potentiometer", "id": "pot3", "top": 340, "left": 260, "attrs": { "label": "Weight (kg)", "value": "0.5" } }
   ],
   "connections": [
     [ "dht1:VCC", "esp:3V3", "red", [] ],
@@ -27,6 +28,9 @@
     [ "led1:K", "esp:GND.1", "black", [] ],
     [ "led2:A", "r2:1", "red", [] ],
     [ "r2:2", "esp:D5", "red", [] ],
-    [ "led2:K", "esp:GND.1", "black", [] ]
+    [ "led2:K", "esp:GND.1", "black", [] ],
+    [ "pot3:VCC", "esp:3V3", "red", [] ],
+    [ "pot3:GND", "esp:GND.2", "black", [] ],
+    [ "pot3:SIG", "esp:A6", "purple", [] ]
   ]
 }

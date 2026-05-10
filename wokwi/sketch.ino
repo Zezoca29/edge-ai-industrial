@@ -24,6 +24,7 @@
 #define CUR_PIN      A3
 #define LED_NORMAL   2
 #define LED_ANOMALY  5
+#define WEIGHT_PIN   A6
 
 // ── Config WiFi / MQTT ─────────────────────────────────────────────────────
 const char* WIFI_SSID  = "Wokwi-GUEST";
@@ -37,6 +38,18 @@ const float TEMP_ANOMALY  = 38.0;
 const float VIB_ANOMALY   = 0.70;
 const float CUR_ANOMALY   = 4.50;
 const float PUBLISH_SEC   = 5.0;
+
+const float WEIGHT_MAX_KG  = 10.0f;
+const float PICK_THRESHOLD = 0.050f;
+
+struct Product { const char* name; float unit_kg; float tolerance_kg; };
+const Product CATALOG[] = {
+  { "Parafuso M8",  0.025f, 0.008f },
+  { "Porca M8",     0.010f, 0.004f },
+  { "Arruela M8",   0.005f, 0.002f },
+  { "Parafuso M12", 0.060f, 0.015f },
+};
+const int CATALOG_SIZE = 4;
 
 // ── Objetos ────────────────────────────────────────────────────────────────
 DHT         dht(DHT_PIN, DHT_TYPE);
@@ -71,6 +84,37 @@ float calcAnomalyScore(float temp, float vib, float cur) {
   if (vib  > VIB_ANOMALY)   score += (vib  - VIB_ANOMALY)  / 1.0f;
   if (cur  > CUR_ANOMALY)   score += (cur  - CUR_ANOMALY)  / 3.0f;
   return constrain(score / 3.0f + 0.05f, 0.0f, 1.0f);
+}
+
+float readWeight() {
+  int raw = analogRead(WEIGHT_PIN);
+  return (raw / 4095.0f) * WEIGHT_MAX_KG;
+}
+
+struct PickResult { bool detected; const char* name; int qty; float delta; float conf; };
+
+PickResult classifyPick(float prevWeight, float currentWeight) {
+  float delta = prevWeight - currentWeight;
+  if (delta < PICK_THRESHOLD) return { false, nullptr, 0, 0.0f, 0.0f };
+
+  const Product* best = nullptr;
+  float bestError = 1e9f;
+  for (int i = 0; i < CATALOG_SIZE; i++) {
+    int qty = max(1, (int)round(delta / CATALOG[i].unit_kg));
+    float expected = qty * CATALOG[i].unit_kg;
+    float error = fabsf(delta - expected);
+    if (error < CATALOG[i].tolerance_kg * qty && error < bestError) {
+      bestError = error;
+      best = &CATALOG[i];
+    }
+  }
+
+  if (!best) return { false, nullptr, 0, 0.0f, 0.0f };
+
+  int qty = max(1, (int)round(delta / best->unit_kg));
+  float expected = qty * best->unit_kg;
+  float conf = constrain(1.0f - fabsf(delta - expected) / best->unit_kg, 0.0f, 1.0f);
+  return { true, best->name, qty, delta, conf };
 }
 
 // ── Setup ──────────────────────────────────────────────────────────────────
@@ -138,6 +182,7 @@ void publishStatus(const char* status) {
 
 // ── Loop ───────────────────────────────────────────────────────────────────
 unsigned long lastPublish = 0;
+float prevWeight = -1.0f;
 
 void loop() {
   if (!mqtt.connected()) connectMqtt();
@@ -152,6 +197,7 @@ void loop() {
   float hum  = dht.readHumidity();
   float vib  = readVibration();
   float cur  = readCurrent();
+  float weight = readWeight();
 
   if (isnan(temp)) temp = 25.0f + sin(now / 10000.0f) * 3.0f;
 
@@ -164,7 +210,7 @@ void loop() {
   digitalWrite(LED_ANOMALY, isAnomaly ? HIGH : LOW);
 
   // Payload JSON
-  StaticJsonDocument<512> doc;
+  StaticJsonDocument<768> doc;
   doc["device_id"] = DEVICE_ID;
   doc["timestamp"] = isoTimestamp();
 
@@ -181,17 +227,37 @@ void loop() {
   curObj["value"]  = round(cur * 1000) / 1000.0;
   curObj["unit"]   = "A";
 
+  JsonObject wgtObj = sensors.createNestedObject("weight");
+  wgtObj["value"] = round(weight * 1000) / 1000.0;
+  wgtObj["unit"]  = "kg";
+
+  // Pick detection
+  if (prevWeight >= 0.0f) {
+    PickResult pick = classifyPick(prevWeight, weight);
+    if (pick.detected) {
+      JsonObject pe = doc.createNestedObject("pick_event");
+      pe["detected"]        = true;
+      pe["product_name"]    = pick.name;
+      pe["quantity"]        = pick.qty;
+      pe["weight_delta_kg"] = round(pick.delta * 10000) / 10000.0;
+      pe["confidence"]      = round(pick.conf * 1000) / 1000.0;
+      Serial.printf("[PICK] product=%s qty=%d delta=%.3fkg conf=%.2f\n",
+                    pick.name, pick.qty, pick.delta, pick.conf);
+    }
+  }
+  prevWeight = weight;
+
   JsonObject inf = doc.createNestedObject("inference");
   inf["classification"] = cls;
   inf["anomaly_score"]  = round(score * 1000) / 1000.0;
   inf["model_version"]  = "wokwi-v1";
 
-  char buf[512];
+  char buf[768];
   serializeJson(doc, buf);
 
   bool ok = mqtt.publish(sensorTopic, buf);
-  Serial.printf("[SENSOR] temp=%.1fC vib=%.3f cur=%.2fA score=%.2f [%s] pub=%s\n",
-                temp, vib, cur, score, cls, ok ? "OK" : "FAIL");
+  Serial.printf("[SENSOR] temp=%.1fC vib=%.3f cur=%.2fA wgt=%.3fkg score=%.2f [%s] pub=%s\n",
+                temp, vib, cur, weight, score, cls, ok ? "OK" : "FAIL");
 
   // Publica status a cada 30s
   static unsigned long lastStatus = 0;
