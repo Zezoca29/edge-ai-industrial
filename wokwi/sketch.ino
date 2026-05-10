@@ -145,7 +145,7 @@ void setup() {
 
   // MQTT
   mqtt.setServer(MQTT_HOST, MQTT_PORT);
-  mqtt.setBufferSize(512);
+  mqtt.setBufferSize(768);
 }
 
 void connectMqtt() {
