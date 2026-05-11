@@ -51,6 +51,8 @@ const Product CATALOG[] = {
 };
 const int CATALOG_SIZE = 4;
 
+struct PickResult { bool detected; const char* name; int qty; float delta; float conf; };
+
 // ── Objetos ────────────────────────────────────────────────────────────────
 DHT         dht(DHT_PIN, DHT_TYPE);
 WiFiClient  wifiClient;
@@ -90,8 +92,6 @@ float readWeight() {
   int raw = analogRead(WEIGHT_PIN);
   return (raw / 4095.0f) * WEIGHT_MAX_KG;
 }
-
-struct PickResult { bool detected; const char* name; int qty; float delta; float conf; };
 
 PickResult classifyPick(float prevWeight, float currentWeight) {
   float delta = prevWeight - currentWeight;
