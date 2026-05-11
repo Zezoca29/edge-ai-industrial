@@ -35,7 +35,7 @@ server:
 
 # MQTT
 mqtt:
-  broker-url: ${MQTT_BROKER_URL:tcp://localhost:1883}
+  broker-url: ${MQTT_BROKER_URL:tcp://broker.emqx.io:1883}
   client-id: ${MQTT_CLIENT_ID:edge-ai-backend}
   username: ${MQTT_USERNAME:}
   password: ${MQTT_PASSWORD:}
