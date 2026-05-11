@@ -31,7 +31,7 @@ export function PickEventTable({ picks }: PickEventTableProps) {
             const confPercent = (p.confidence * 100).toFixed(0);
             const isHigh = p.confidence >= 0.85;
             return (
-              <tr key={i} className="border-b border-gray-700 hover:bg-gray-800">
+              <tr key={`${p.deviceId}-${p.time}`} className="border-b border-gray-700 hover:bg-gray-800">
                 <td className="py-2 pr-4 text-gray-300">
                   {new Date(p.time).toLocaleString('pt-BR')}
                 </td>

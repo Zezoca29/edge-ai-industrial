@@ -113,7 +113,7 @@ PickResult classifyPick(float prevWeight, float currentWeight) {
 
   int qty = max(1, (int)round(delta / best->unit_kg));
   float expected = qty * best->unit_kg;
-  float conf = constrain(1.0f - fabsf(delta - expected) / best->unit_kg, 0.0f, 1.0f);
+  float conf = constrain(1.0f - fabsf(delta - expected) / (best->unit_kg * qty), 0.0f, 1.0f);
   return { true, best->name, qty, delta, conf };
 }
 
