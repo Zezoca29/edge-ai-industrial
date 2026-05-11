@@ -31,7 +31,7 @@ const char* WIFI_SSID  = "Wokwi-GUEST";
 const char* WIFI_PASS  = "";
 const char* MQTT_HOST  = "broker.emqx.io";  // troque por IP do gateway Wokwi para localhost
 const int   MQTT_PORT  = 1883;
-const char* DEVICE_ID  = "wokwi-esp32-001";
+const char* DEVICE_ID  = "wokwi-shelf-001";
 
 // ── Thresholds de anomalia ─────────────────────────────────────────────────
 const float TEMP_ANOMALY  = 38.0;
