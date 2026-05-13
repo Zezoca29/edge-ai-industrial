@@ -9,7 +9,7 @@ services:
     image: timescale/timescaledb:latest-pg16
     container_name: edgeai-postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       POSTGRES_DB: edgeai
       POSTGRES_USER: edgeai
