@@ -16,6 +16,9 @@ public final class CurrentStore {
         if (auth == null || !(auth.getPrincipal() instanceof StoreUserDetails details)) {
             throw new IllegalStateException("No authenticated store user in context");
         }
+        if (details.getStoreId() == null) {
+            throw new IllegalStateException("Authenticated user has no store assigned");
+        }
         return details.getStoreId();
     }
 }
