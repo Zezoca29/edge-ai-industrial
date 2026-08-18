@@ -13,31 +13,35 @@ import java.util.UUID;
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "users")
-public class User {
+@Table(name = "products")
+public class Product {
 
     @EqualsAndHashCode.Include
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(unique = true, nullable = false)
-    private String email;
-
-    @Column(name = "password_hash", nullable = false)
-    private String passwordHash;
+    @Column(name = "store_id", nullable = false)
+    private UUID storeId;
 
     @Column(nullable = false)
     private String name;
 
-    @Column(length = 20)
-    private String role = "viewer";
+    private String sku;
 
-    @Column
+    /** Weight of a single unit, in grams. Drives the whole stock count. */
+    @Column(name = "unit_weight_g", nullable = false)
+    private Double unitWeightG;
+
+    /** Accepted gap between the reading and the expected integer multiple. */
+    @Column(name = "tolerance_g", nullable = false)
+    private Double toleranceG = 5.0;
+
+    @Column(name = "unit_price_cents")
+    private Integer unitPriceCents;
+
+    @Column(nullable = false)
     private Boolean active = true;
-
-    @Column(name = "store_id")
-    private UUID storeId;
 
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;

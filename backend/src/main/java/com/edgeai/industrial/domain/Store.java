@@ -13,31 +13,23 @@ import java.util.UUID;
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "users")
-public class User {
+@Table(name = "stores")
+public class Store {
 
     @EqualsAndHashCode.Include
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(unique = true, nullable = false)
-    private String email;
-
-    @Column(name = "password_hash", nullable = false)
-    private String passwordHash;
-
     @Column(nullable = false)
     private String name;
 
-    @Column(length = 20)
-    private String role = "viewer";
+    private String cnpj;
 
-    @Column
-    private Boolean active = true;
+    private String address;
 
-    @Column(name = "store_id")
-    private UUID storeId;
+    @Column(nullable = false)
+    private String timezone = "America/Sao_Paulo";
 
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;
