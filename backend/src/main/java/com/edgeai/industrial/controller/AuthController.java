@@ -1,6 +1,7 @@
 package com.edgeai.industrial.controller;
 
 import com.edgeai.industrial.security.JwtService;
+import com.edgeai.industrial.security.StoreUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -10,6 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -28,7 +30,11 @@ public class AuthController {
                             body.get("email"), body.get("password")
                     )
             );
-            String token = jwtService.generateToken(auth.getName());
+            UUID storeId = null;
+            if (auth.getPrincipal() instanceof StoreUserDetails details) {
+                storeId = details.getStoreId();
+            }
+            String token = jwtService.generateToken(auth.getName(), storeId);
             return ResponseEntity.ok(Map.of("token", token));
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(401).body(Map.of("error", "Credenciais inválidas"));
