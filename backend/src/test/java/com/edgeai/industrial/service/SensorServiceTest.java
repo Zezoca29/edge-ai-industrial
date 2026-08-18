@@ -23,7 +23,7 @@ class SensorServiceTest {
     private SensorDataRepository sensorDataRepository;
 
     @Mock
-    private PickService pickService;
+    private ShelfService shelfService;
 
     @InjectMocks
     private SensorService sensorService;
@@ -88,12 +88,10 @@ class SensorServiceTest {
 
         sensorService.saveSensorPayload(device, payload);
 
-        // temperature + vibration + current + weight = 4
         verify(sensorDataRepository, times(4)).insert(
                 any(), eq(device.getId()), eq(device.getName()),
                 any(), anyDouble(), any(), eq("normal"), eq(0.05)
         );
-        verifyNoInteractions(pickService);
     }
 
     @Test
@@ -107,20 +105,30 @@ class SensorServiceTest {
                 any(), eq(device.getId()), eq(device.getName()),
                 any(), anyDouble(), any(), eq("normal"), eq(0.05)
         );
-        verifyNoInteractions(pickService);
+        verifyNoInteractions(shelfService);
     }
 
     @Test
-    void saveSensorPayloadSavesPickEventWhenDetected() {
+    void saveSensorPayloadForwardsWeightInGramsToShelfService() {
+        Device device = makeDevice();
+        SensorPayloadDto payload = makePayload(true, false);
+
+        sensorService.saveSensorPayload(device, payload);
+
+        // o payload de teste traz 4.75 kg
+        verify(shelfService, times(1)).processWeight(
+                eq(device.getId()), any(OffsetDateTime.class), eq(4750.0), eq(true));
+    }
+
+    @Test
+    void saveSensorPayloadIgnoresLegacyPickEventBlock() {
         Device device = makeDevice();
         SensorPayloadDto payload = makePayload(true, true);
 
         sensorService.saveSensorPayload(device, payload);
 
-        verify(pickService, times(1)).savePickEvent(
-                eq(device.getId()),
-                any(OffsetDateTime.class),
-                eq(payload.getPickEvent())
-        );
+        // o bloco pick_event antigo nao gera mais nada por si so
+        verify(shelfService, times(1)).processWeight(
+                eq(device.getId()), any(OffsetDateTime.class), eq(4750.0), eq(true));
     }
 }

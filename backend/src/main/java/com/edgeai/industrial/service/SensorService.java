@@ -17,7 +17,7 @@ import java.util.UUID;
 public class SensorService {
 
     private final SensorDataRepository sensorDataRepository;
-    private final PickService pickService;
+    private final ShelfService shelfService;
 
     public void saveSensorPayload(Device device, SensorPayloadDto payload) {
         OffsetDateTime time = payload.getTimestamp().atOffset(ZoneOffset.UTC);
@@ -42,10 +42,10 @@ public class SensorService {
             sensorDataRepository.insert(time, device.getId(), device.getName(),
                     "weight", s.getWeight().getValue(), s.getWeight().getUnit(),
                     classification, anomalyScore);
-        }
 
-        if (payload.getPickEvent() != null && payload.getPickEvent().isDetected()) {
-            pickService.savePickEvent(device.getId(), time, payload.getPickEvent());
+            double weightG = ShelfCalculator.toGrams(s.getWeight().getValue(), s.getWeight().getUnit());
+            boolean stable = !Boolean.FALSE.equals(s.getWeightStable());
+            shelfService.processWeight(device.getId(), time, weightG, stable);
         }
     }
 

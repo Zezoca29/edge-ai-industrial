@@ -2,7 +2,6 @@ package com.edgeai.industrial.repository;
 
 import com.edgeai.industrial.dto.PickEventDto;
 import com.edgeai.industrial.dto.ProductDemandDto;
-import com.edgeai.industrial.dto.SensorPayloadDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -20,18 +19,21 @@ public class PickEventRepository {
 
     private final JdbcTemplate jdbc;
 
-    public void save(UUID deviceId, OffsetDateTime time, SensorPayloadDto.PickEvent pick) {
+    public void saveDerived(UUID deviceId, OffsetDateTime time, UUID storeId, UUID productId,
+                            String productName, int quantity, double weightDeltaKg, double confidence) {
         jdbc.update("""
                 INSERT INTO pick_events
-                    (time, device_id, product_name, quantity, weight_delta_kg, confidence)
-                VALUES (?, ?, ?, ?, ?, ?)
+                    (time, device_id, store_id, product_id, product_name, quantity, weight_delta_kg, confidence)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 Timestamp.from(time.toInstant()),
                 deviceId,
-                pick.getProductName(),
-                pick.getQuantity(),
-                pick.getWeightDeltaKg(),
-                pick.getConfidence());
+                storeId,
+                productId,
+                productName,
+                quantity,
+                weightDeltaKg,
+                confidence);
     }
 
     public List<PickEventDto> findRecent(int hours, int limit) {
