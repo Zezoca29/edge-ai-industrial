@@ -60,6 +60,7 @@ PubSubClient mqtt(wifiClient);
 
 char sensorTopic[64];
 char statusTopic[64];
+char commandTopic[64];
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 String isoTimestamp() {
@@ -127,8 +128,9 @@ void setup() {
   digitalWrite(LED_NORMAL, LOW);
   digitalWrite(LED_ANOMALY, LOW);
 
-  snprintf(sensorTopic, sizeof(sensorTopic), "sensor/data/%s", DEVICE_ID);
-  snprintf(statusTopic, sizeof(statusTopic), "device/status/%s", DEVICE_ID);
+  snprintf(sensorTopic,  sizeof(sensorTopic),  "sensor/data/%s",    DEVICE_ID);
+  snprintf(statusTopic,  sizeof(statusTopic),  "device/status/%s",  DEVICE_ID);
+  snprintf(commandTopic, sizeof(commandTopic), "device/command/%s", DEVICE_ID);
 
   // WiFi
   Serial.printf("[WiFi] Conectando em %s...\n", WIFI_SSID);
@@ -146,6 +148,12 @@ void setup() {
   // MQTT
   mqtt.setServer(MQTT_HOST, MQTT_PORT);
   mqtt.setBufferSize(768);
+  mqtt.setCallback([](char* topic, byte* payload, unsigned int len) {
+    if (strstr(topic, "device/command/") != nullptr) {
+      Serial.println("[CMD] Ping recebido — publicando status online");
+      publishStatus("online");
+    }
+  });
 }
 
 void connectMqtt() {
@@ -154,6 +162,7 @@ void connectMqtt() {
     String clientId = String("wokwi-") + String(random(0xffff), HEX);
     if (mqtt.connect(clientId.c_str())) {
       Serial.println("[MQTT] Conectado!");
+      mqtt.subscribe(commandTopic);
       // LWT — device offline
       StaticJsonDocument<128> lwt;
       lwt["device_id"] = DEVICE_ID;

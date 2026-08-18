@@ -39,6 +39,8 @@ export const apiClient = {
     request<import('@/types').PickEvent[]>(`/picks/recent?hours=${hours}`),
   getProductDemand: (hours = 168) =>
     request<import('@/types').ProductDemand[]>(`/picks/demand?hours=${hours}`),
+  pingDevice: (name: string) =>
+    request<void>(`/devices/${encodeURIComponent(name)}/ping`, { method: 'POST' }),
   login: (email: string, password: string) =>
     request<{ token: string }>('/auth/login', {
       method: 'POST',
