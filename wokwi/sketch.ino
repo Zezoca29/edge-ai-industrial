@@ -40,18 +40,7 @@ const float CUR_ANOMALY   = 4.50;
 const float PUBLISH_SEC   = 5.0;
 
 const float WEIGHT_MAX_KG  = 10.0f;
-const float PICK_THRESHOLD = 0.050f;
-
-struct Product { const char* name; float unit_kg; float tolerance_kg; };
-const Product CATALOG[] = {
-  { "Parafuso M8",  0.025f, 0.008f },
-  { "Porca M8",     0.010f, 0.004f },
-  { "Arruela M8",   0.005f, 0.002f },
-  { "Parafuso M12", 0.060f, 0.015f },
-};
-const int CATALOG_SIZE = 4;
-
-struct PickResult { bool detected; const char* name; int qty; float delta; float conf; };
+const float WEIGHT_STABLE_TOLERANCE_KG = 0.010f;  // 10g entre leituras = estavel
 
 // ── Objetos ────────────────────────────────────────────────────────────────
 DHT         dht(DHT_PIN, DHT_TYPE);
@@ -92,30 +81,6 @@ float calcAnomalyScore(float temp, float vib, float cur) {
 float readWeight() {
   int raw = analogRead(WEIGHT_PIN);
   return (raw / 4095.0f) * WEIGHT_MAX_KG;
-}
-
-PickResult classifyPick(float prevWeight, float currentWeight) {
-  float delta = prevWeight - currentWeight;
-  if (delta < PICK_THRESHOLD) return { false, nullptr, 0, 0.0f, 0.0f };
-
-  const Product* best = nullptr;
-  float bestError = 1e9f;
-  for (int i = 0; i < CATALOG_SIZE; i++) {
-    int qty = max(1, (int)round(delta / CATALOG[i].unit_kg));
-    float expected = qty * CATALOG[i].unit_kg;
-    float error = fabsf(delta - expected);
-    if (error < CATALOG[i].tolerance_kg * qty && error < bestError) {
-      bestError = error;
-      best = &CATALOG[i];
-    }
-  }
-
-  if (!best) return { false, nullptr, 0, 0.0f, 0.0f };
-
-  int qty = max(1, (int)round(delta / best->unit_kg));
-  float expected = qty * best->unit_kg;
-  float conf = constrain(1.0f - fabsf(delta - expected) / (best->unit_kg * qty), 0.0f, 1.0f);
-  return { true, best->name, qty, delta, conf };
 }
 
 // ── Setup ──────────────────────────────────────────────────────────────────
@@ -237,23 +202,12 @@ void loop() {
   curObj["unit"]   = "A";
 
   JsonObject wgtObj = sensors.createNestedObject("weight");
+  // Estabilidade: duas leituras consecutivas dentro da tolerancia.
+  bool weightStable = (prevWeight >= 0.0f) &&
+                      (fabsf(weight - prevWeight) <= WEIGHT_STABLE_TOLERANCE_KG);
   wgtObj["value"] = round(weight * 1000) / 1000.0;
   wgtObj["unit"]  = "kg";
-
-  // Pick detection
-  if (prevWeight >= 0.0f) {
-    PickResult pick = classifyPick(prevWeight, weight);
-    if (pick.detected) {
-      JsonObject pe = doc.createNestedObject("pick_event");
-      pe["detected"]        = true;
-      pe["product_name"]    = pick.name;
-      pe["quantity"]        = pick.qty;
-      pe["weight_delta_kg"] = round(pick.delta * 10000) / 10000.0;
-      pe["confidence"]      = round(pick.conf * 1000) / 1000.0;
-      Serial.printf("[PICK] product=%s qty=%d delta=%.3fkg conf=%.2f\n",
-                    pick.name, pick.qty, pick.delta, pick.conf);
-    }
-  }
+  sensors["weight_stable"] = weightStable;
   prevWeight = weight;
 
   JsonObject inf = doc.createNestedObject("inference");
@@ -265,8 +219,8 @@ void loop() {
   serializeJson(doc, buf);
 
   bool ok = mqtt.publish(sensorTopic, buf);
-  Serial.printf("[SENSOR] temp=%.1fC vib=%.3f cur=%.2fA wgt=%.3fkg score=%.2f [%s] pub=%s\n",
-                temp, vib, cur, weight, score, cls, ok ? "OK" : "FAIL");
+  Serial.printf("[SENSOR] temp=%.1fC vib=%.3f cur=%.2fA wgt=%.3fkg estavel=%d score=%.2f [%s] pub=%s\n",
+                temp, vib, cur, weight, weightStable ? 1 : 0, score, cls, ok ? "OK" : "FAIL");
 
   // Publica status a cada 30s
   static unsigned long lastStatus = 0;
