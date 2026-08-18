@@ -41,3 +41,26 @@ export interface ProductDemand {
   totalQuantity: number;
   lastPick: string;
 }
+
+export interface Product {
+  id: string;
+  name: string;
+  sku: string | null;
+  unitWeightG: number;
+  toleranceG: number;
+  unitPriceCents: number | null;
+  active: boolean;
+}
+
+export interface ShelfSlot {
+  id: string;
+  deviceId: string;
+  slotIndex: number;
+  productId: string | null;
+  productName: string | null;
+  tareG: number;
+  minQty: number;
+  currentQty: number | null;
+  currentWeightG: number | null;
+  suspect: boolean;
+}
