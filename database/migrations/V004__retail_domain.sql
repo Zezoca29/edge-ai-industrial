@@ -46,5 +46,4 @@ ALTER TABLE pick_events ADD COLUMN IF NOT EXISTS product_id UUID REFERENCES prod
 ALTER TABLE pick_events ADD COLUMN IF NOT EXISTS store_id   UUID REFERENCES stores(id);
 
 CREATE INDEX IF NOT EXISTS idx_products_store    ON products (store_id, active);
-CREATE INDEX IF NOT EXISTS idx_shelf_slots_device ON shelf_slots (device_id, slot_index);
 CREATE INDEX IF NOT EXISTS idx_pick_events_store ON pick_events (store_id, time DESC);
