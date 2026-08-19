@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert } from '@/types';
 import { apiClient } from '@/services/apiClient';
 import { usePolling } from '@/hooks/usePolling';
@@ -34,6 +34,19 @@ export default function AlertsPage() {
   }, [showAll]);
 
   usePolling(load, 10000);
+
+  // usePolling só reage ao intervalo, não à função. Sem este efeito, marcar
+  // "mostrar também os já vistos" não faria nada por até 10 segundos e o
+  // filtro pareceria quebrado. A primeira execução é ignorada porque
+  // usePolling já busca ao montar.
+  const mounted = useRef(false);
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      return;
+    }
+    load();
+  }, [load]);
 
   function acknowledge(id: string) {
     setActionError(null);
