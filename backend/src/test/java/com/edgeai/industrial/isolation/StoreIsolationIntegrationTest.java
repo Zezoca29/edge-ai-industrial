@@ -1,11 +1,13 @@
 package com.edgeai.industrial.isolation;
 
+import com.edgeai.industrial.domain.Alert;
 import com.edgeai.industrial.domain.Device;
 import com.edgeai.industrial.domain.Product;
 import com.edgeai.industrial.domain.ShelfSlot;
 import com.edgeai.industrial.dto.PickEventDto;
 import com.edgeai.industrial.dto.ProductDemandDto;
 import com.edgeai.industrial.dto.SensorReadingDto;
+import com.edgeai.industrial.repository.AlertRepository;
 import com.edgeai.industrial.repository.DeviceRepository;
 import com.edgeai.industrial.repository.PickEventRepository;
 import com.edgeai.industrial.repository.ProductRepository;
@@ -19,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -39,6 +42,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Proves acceptance criterion 7 against a real Postgres instead of mocks.
@@ -90,7 +95,8 @@ class StoreIsolationIntegrationTest {
             // V002 and V005 only seed demo rows; this test seeds its own two stores.
             for (String file : List.of("V001__initial_schema.sql",
                                        "V003__pick_events.sql",
-                                       "V004__retail_domain.sql")) {
+                                       "V004__retail_domain.sql",
+                                       "V008__alerts_and_push.sql")) {
                 st.execute(Files.readString(migrations.resolve(file)));
             }
         }
@@ -102,6 +108,7 @@ class StoreIsolationIntegrationTest {
     @Autowired private ShelfSlotRepository shelfSlotRepository;
     @Autowired private PickEventRepository pickEventRepository;
     @Autowired private SensorDataRepository sensorDataRepository;
+    @Autowired private AlertRepository alertRepository;
 
     private UUID storeA;
     private UUID storeB;
@@ -272,5 +279,47 @@ class StoreIsolationIntegrationTest {
 
         assertThat(sensorDataRepository.findByDeviceAndTimeRange(deviceB, storeA, from, to)).isEmpty();
         assertThat(sensorDataRepository.findByDeviceAndTimeRange(deviceB, storeB, from, to)).isNotEmpty();
+    }
+
+    // ------------------------------------------------------------- alerts
+
+    private Alert alertFor(UUID storeId, UUID deviceId, UUID slotId, String message) {
+        Alert a = new Alert();
+        a.setStoreId(storeId);
+        a.setDeviceId(deviceId);
+        a.setShelfSlotId(slotId);
+        a.setAlertType("stock_low");
+        a.setSeverity("high");
+        a.setMessage(message);
+        return a;
+    }
+
+    @Test
+    void thePartialIndexRefusesASecondOpenAlertForTheSameSlot() {
+        alertRepository.saveAndFlush(alertFor(storeA, deviceA, slotA, "primeiro"));
+
+        Alert second = alertFor(storeA, deviceA, slotA, "segundo");
+
+        assertThatThrownBy(() -> alertRepository.saveAndFlush(second))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void aResolvedAlertDoesNotBlockTheNextOne() {
+        Alert first = alertFor(storeA, deviceA, slotA, "primeiro");
+        first.setResolvedAt(OffsetDateTime.now());
+        alertRepository.saveAndFlush(first);
+
+        Alert second = alertFor(storeA, deviceA, slotA, "segundo");
+
+        assertThatCode(() -> alertRepository.saveAndFlush(second)).doesNotThrowAnyException();
+    }
+
+    @Test
+    void alertsOfStoreBNeverReachStoreA() {
+        alertRepository.saveAndFlush(alertFor(storeB, deviceB, slotB, "da loja B"));
+
+        assertThat(alertRepository.findByStoreIdOrderByCreatedAtDesc(storeA))
+                .noneMatch(a -> a.getStoreId().equals(storeB));
     }
 }
