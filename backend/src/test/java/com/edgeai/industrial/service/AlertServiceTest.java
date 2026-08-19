@@ -52,7 +52,7 @@ class AlertServiceTest {
     void openPersistsTheAlertAndPublishesAnEvent() {
         when(alertRepository.findByShelfSlotIdAndAlertTypeAndResolvedAtIsNull(slotId, AlertService.TYPE_STOCK_LOW))
                 .thenReturn(Optional.empty());
-        when(alertRepository.save(any(Alert.class))).thenAnswer(inv -> {
+        when(alertRepository.saveAndFlush(any(Alert.class))).thenAnswer(inv -> {
             Alert a = inv.getArgument(0);
             a.setId(UUID.randomUUID());
             return a;
@@ -74,7 +74,7 @@ class AlertServiceTest {
                 AlertService.TYPE_STOCK_LOW, "high", "outra mensagem");
 
         assertTrue(result.isEmpty(), "o alerta ja aberto nao pode virar um segundo aviso");
-        verify(alertRepository, never()).save(any(Alert.class));
+        verify(alertRepository, never()).saveAndFlush(any(Alert.class));
         verifyNoInteractions(events);
     }
 
@@ -83,7 +83,7 @@ class AlertServiceTest {
         when(alertRepository.findByDeviceIdAndAlertTypeAndShelfSlotIdIsNullAndResolvedAtIsNull(
                 deviceId, AlertService.TYPE_DEVICE_SILENT))
                 .thenReturn(Optional.empty());
-        when(alertRepository.save(any(Alert.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(alertRepository.saveAndFlush(any(Alert.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Optional<Alert> result = alertService.open(storeId, deviceId, null,
                 AlertService.TYPE_DEVICE_SILENT, "medium", "Sensor sem sinal ha 10 minutos");
@@ -137,5 +137,19 @@ class AlertServiceTest {
 
         assertThrows(org.springframework.web.server.ResponseStatusException.class,
                 () -> alertService.acknowledge(otherId, storeId, UUID.randomUUID()));
+    }
+
+    @Test
+    void openingAStockLowWithoutASlotThrowsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class,
+                () -> alertService.open(storeId, deviceId, null,
+                        AlertService.TYPE_STOCK_LOW, "high", "Estoque baixo"));
+    }
+
+    @Test
+    void openingADeviceSilentWithASlotThrowsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class,
+                () -> alertService.open(storeId, deviceId, slotId,
+                        AlertService.TYPE_DEVICE_SILENT, "medium", "Sensor sem sinal"));
     }
 }

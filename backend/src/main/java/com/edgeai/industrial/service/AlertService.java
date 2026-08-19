@@ -29,17 +29,25 @@ public class AlertService {
 
     /**
      * Opens an alert unless one of the same type is already open for the same
-     * target.
+     * target. Stock alerts must have a shelf slot; device alerts must not.
      *
      * <p>Runs in its own transaction on purpose. The partial unique index is the
      * last-resort guarantee against a duplicate, and a violation of it poisons
      * whatever transaction it happens in — a lesson from the shelf slot race in
      * P1. Keeping the insert isolated means a caller mid-ingestion loses at most
      * the alert, never the reading it was processing.
+     *
+     * <p>{@code saveAndFlush} is used to force the INSERT to execute before the
+     * event is published, so a concurrent duplicate cannot result in a phantom
+     * event. A duplicate violation throws {@link org.springframework.dao.DataIntegrityViolationException},
+     * which the caller must catch; the {@code REQUIRES_NEW} isolation means the
+     * caller's own transaction is not marked rollback-only and can recover.
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Optional<Alert> open(UUID storeId, UUID deviceId, UUID shelfSlotId,
                                 String type, String severity, String message) {
+        validateTypeAndSlotPairing(type, shelfSlotId);
+
         Optional<Alert> existing = shelfSlotId != null
                 ? alertRepository.findByShelfSlotIdAndAlertTypeAndResolvedAtIsNull(shelfSlotId, type)
                 : alertRepository.findByDeviceIdAndAlertTypeAndShelfSlotIdIsNullAndResolvedAtIsNull(deviceId, type);
@@ -56,9 +64,18 @@ public class AlertService {
         alert.setSeverity(severity);
         alert.setMessage(message);
 
-        Alert saved = alertRepository.save(alert);
+        Alert saved = alertRepository.saveAndFlush(alert);
         events.publishEvent(new AlertOpenedEvent(saved.getId(), storeId, titleFor(type), message));
         return Optional.of(saved);
+    }
+
+    private void validateTypeAndSlotPairing(String type, UUID shelfSlotId) {
+        if (TYPE_STOCK_LOW.equals(type) && shelfSlotId == null) {
+            throw new IllegalArgumentException("stock_low alert must have a shelfSlotId");
+        }
+        if (TYPE_DEVICE_SILENT.equals(type) && shelfSlotId != null) {
+            throw new IllegalArgumentException("device_silent alert must have a null shelfSlotId");
+        }
     }
 
     @Transactional
