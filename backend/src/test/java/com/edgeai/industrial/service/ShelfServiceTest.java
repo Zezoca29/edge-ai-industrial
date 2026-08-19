@@ -14,6 +14,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
@@ -102,6 +103,38 @@ class ShelfServiceTest {
     }
 
     @Test
+    void unconfiguredSlotStillRecordsTheRawWeightSoItCanBeTared() {
+        ShelfSlot s = slot(null);
+        s.setProductId(null);
+        when(shelfSlotRepository.findByDeviceIdAndSlotIndex(deviceId, (short) 0))
+                .thenReturn(Optional.of(s));
+
+        shelfService.processWeight(deviceId, now, 210.0, true);
+
+        ArgumentCaptor<ShelfSlot> captor = ArgumentCaptor.forClass(ShelfSlot.class);
+        verify(shelfSlotRepository).save(captor.capture());
+        assertEquals(210.0, captor.getValue().getCurrentWeightG());
+        assertNull(captor.getValue().getCurrentQty());
+        verifyNoInteractions(pickEventRepository);
+    }
+
+    @Test
+    void slotPointingAtAMissingProductRecordsWeightAndSkipsCounting() {
+        ShelfSlot s = slot(5);
+        when(shelfSlotRepository.findByDeviceIdAndSlotIndex(deviceId, (short) 0))
+                .thenReturn(Optional.of(s));
+        when(productRepository.findById(productId)).thenReturn(Optional.empty());
+
+        shelfService.processWeight(deviceId, now, 3200.0, true);
+
+        ArgumentCaptor<ShelfSlot> captor = ArgumentCaptor.forClass(ShelfSlot.class);
+        verify(shelfSlotRepository).save(captor.capture());
+        assertEquals(3200.0, captor.getValue().getCurrentWeightG());
+        assertEquals(5, captor.getValue().getCurrentQty());
+        verifyNoInteractions(pickEventRepository);
+    }
+
+    @Test
     void firstReadingInitializesQuantityWithoutPickEvent() {
         wire(slot(null));
 
@@ -158,6 +191,8 @@ class ShelfServiceTest {
         verify(shelfSlotRepository).save(captor.capture());
         assertEquals(0, captor.getValue().getCurrentQty());
         assertTrue(captor.getValue().getSuspect());
+        // Lifting the tray to clean the shelf is not a sale of the whole stock.
+        verifyNoInteractions(pickEventRepository);
     }
 
     @Test
@@ -176,16 +211,40 @@ class ShelfServiceTest {
     }
 
     @Test
-    void missingSlotIsCreatedUnconfiguredOnFirstStableReading() {
+    void missingSlotIsCreatedUnconfiguredAndKeepsTheTriggeringReading() {
         when(shelfSlotRepository.findByDeviceIdAndSlotIndex(deviceId, (short) 0))
                 .thenReturn(Optional.empty());
 
         shelfService.processWeight(deviceId, now, 5200.0, true);
 
+        ArgumentCaptor<ShelfSlot> created = ArgumentCaptor.forClass(ShelfSlot.class);
+        verify(shelfSlotRepository).saveAndFlush(created.capture());
+        assertEquals(deviceId, created.getValue().getDeviceId());
+        assertNull(created.getValue().getProductId());
+
+        // The reading that triggered the creation is not discarded.
+        ArgumentCaptor<ShelfSlot> saved = ArgumentCaptor.forClass(ShelfSlot.class);
+        verify(shelfSlotRepository).save(saved.capture());
+        assertEquals(5200.0, saved.getValue().getCurrentWeightG());
+        verifyNoInteractions(pickEventRepository);
+    }
+
+    @Test
+    void concurrentSlotCreationLosesTheRaceAndReusesTheWinnersRow() {
+        ShelfSlot winner = slot(null);
+        winner.setProductId(null);
+        when(shelfSlotRepository.findByDeviceIdAndSlotIndex(deviceId, (short) 0))
+                .thenReturn(Optional.empty())      // both threads saw nothing
+                .thenReturn(Optional.of(winner));  // re-read after the constraint fired
+        when(shelfSlotRepository.saveAndFlush(any(ShelfSlot.class)))
+                .thenThrow(new DataIntegrityViolationException("uq_shelf_slots_device_slot"));
+
+        shelfService.processWeight(deviceId, now, 5200.0, true);
+
         ArgumentCaptor<ShelfSlot> captor = ArgumentCaptor.forClass(ShelfSlot.class);
         verify(shelfSlotRepository).save(captor.capture());
-        assertEquals(deviceId, captor.getValue().getDeviceId());
-        assertNull(captor.getValue().getProductId());
+        assertSame(winner, captor.getValue());
+        assertEquals(5200.0, captor.getValue().getCurrentWeightG());
         verifyNoInteractions(pickEventRepository);
     }
 }

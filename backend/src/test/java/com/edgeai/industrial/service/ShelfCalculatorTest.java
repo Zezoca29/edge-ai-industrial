@@ -75,6 +75,37 @@ class ShelfCalculatorTest {
     }
 
     @Test
+    void residualExactlyEqualToToleranceIsNotSuspect() {
+        // Powers of two so the residual is exact in binary: 1032 - 4*256 = 8g,
+        // which is precisely the tolerance. The guard is strict `>`.
+        ShelfCalculator.Result r = ShelfCalculator.compute(1032.0, 0.0, 256.0, 8.0);
+        assertEquals(4, r.roundedQty());
+        assertFalse(r.suspect(), "resto igual a tolerancia ainda esta dentro do aceito");
+    }
+
+    @Test
+    void residualOneGramAboveToleranceIsSuspect() {
+        ShelfCalculator.Result r = ShelfCalculator.compute(1033.0, 0.0, 256.0, 8.0);
+        assertEquals(4, r.roundedQty());
+        assertTrue(r.suspect(), "9g de resto contra tolerancia de 8g deve ser suspeito");
+    }
+
+    @Test
+    void nextQtyAtExactlyTheDeadbandEdgeKeepsTheCurrentCount() {
+        // The deadband is a strict `<`, but 0.6 has no exact binary representation:
+        // |5 - 4.4| evaluates to 0.5999999999999996, so the nominal edge still holds.
+        // Pinned deliberately — a drop must clear the edge, not merely reach it.
+        assertEquals(5, ShelfCalculator.nextQty(5, 4.4));
+        assertEquals(5, ShelfCalculator.nextQty(5, 5.6));
+    }
+
+    @Test
+    void nextQtyJustPastTheDeadbandEdgeMoves() {
+        assertEquals(4, ShelfCalculator.nextQty(5, 4.375));   // 0.625 unidades abaixo
+        assertEquals(6, ShelfCalculator.nextQty(5, 5.625));   // 0.625 unidades acima
+    }
+
+    @Test
     void toGramsConvertsKilogramsAndPassesGramsThrough() {
         assertEquals(1500.0, ShelfCalculator.toGrams(1.5, "kg"), 0.0001);
         assertEquals(1500.0, ShelfCalculator.toGrams(1500.0, "g"), 0.0001);
