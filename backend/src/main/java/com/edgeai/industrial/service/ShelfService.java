@@ -75,18 +75,23 @@ public class ShelfService {
         ShelfCalculator.Result result = ShelfCalculator.compute(
                 weightG, slot.getTareG(), product.getUnitWeightG(), product.getToleranceG());
 
+        boolean suspect = result.suspect();
+
         Integer previousQty = slot.getCurrentQty();
         int nextQty = ShelfCalculator.nextQty(previousQty, result.rawUnits());
+        // Read before the flag is overwritten: the *previous* reading's
+        // trustworthiness decides how this one is interpreted (see evaluateStockAlert).
+        boolean previousUntrustworthy = Boolean.TRUE.equals(slot.getSuspect());
 
         slot.setCurrentWeightG(weightG);
         slot.setCurrentQty(nextQty);
-        slot.setSuspect(result.suspect());
+        slot.setSuspect(suspect);
         shelfSlotRepository.save(slot);
 
         // Only a trustworthy drop is a sale. A suspect reading (tray lifted off the
         // cell, weight below the tare) would otherwise invent a full-stock pick and
         // poison the demand chart, exactly like a restock would.
-        if (previousQty != null && nextQty < previousQty && !result.suspect()) {
+        if (previousQty != null && nextQty < previousQty && !suspect) {
             int picked = previousQty - nextQty;
             double weightDeltaKg = picked * product.getUnitWeightG() / 1000.0;
             pickEventRepository.saveDerived(deviceId, time, product.getStoreId(), product.getId(),
@@ -100,8 +105,8 @@ public class ShelfService {
         // the thing that would make his staff start ignoring the system. Do not
         // "simplify" this guard away: it costs no real detections, because a
         // genuinely empty shelf reads exactly at the tare and is not suspect.
-        if (!result.suspect()) {
-            evaluateStockAlert(slot, product, deviceId, previousQty, nextQty);
+        if (!suspect) {
+            evaluateStockAlert(slot, product, deviceId, previousQty, nextQty, previousUntrustworthy);
         }
     }
 
@@ -147,13 +152,25 @@ public class ShelfService {
      * count from trembling at the threshold, so no extra debounce is needed here.
      */
     private void evaluateStockAlert(ShelfSlot slot, Product product, UUID deviceId,
-                                    Integer previousQty, int nextQty) {
+                                    Integer previousQty, int nextQty,
+                                    boolean previousUntrustworthy) {
         if (!Boolean.TRUE.equals(product.getActive())) {
             return;
         }
         int min = slot.getMinQty();
 
-        boolean wasAbove = previousQty == null || previousQty > min;
+        // The reading that follows an untrustworthy one is evaluated as a *state*,
+        // not as a transition. A suspect reading still persists its (saturated)
+        // count — the absolute weight stays the source of truth — so a lifted tray
+        // leaves currentQty at 0 and would make every later low reading look like
+        // "it was already low", disarming the alert until someone restocks past the
+        // minimum and picks back down. Forcing the "was above" side re-arms it.
+        //
+        // This does not trade one false-alert problem for another: AlertService.open
+        // is a no-op while an alert of the same type is still open for the slot
+        // (partial unique index + pre-check), so at most one notification ever
+        // leaves. Do not "simplify" the previousUntrustworthy clause away.
+        boolean wasAbove = previousQty == null || previousUntrustworthy || previousQty > min;
         boolean isAtOrBelow = nextQty <= min;
 
         if (wasAbove && isAtOrBelow) {

@@ -310,6 +310,47 @@ class ShelfServiceTest {
     }
 
     @Test
+    void aFirstEverReadingAlreadyBelowTheMinimumOpensAnAlert() {
+        ShelfSlot s = slot(null);  // nenhuma leitura anterior
+        s.setMinQty(5);
+        wire(s);
+
+        shelfService.processWeight(deviceId, now, 3200.0, true);  // 3000g = 3 unidades
+
+        verify(alertService).open(eq(storeId), eq(deviceId), eq(s.getId()),
+                eq(AlertService.TYPE_STOCK_LOW), eq("high"), contains("Arroz 1kg"));
+    }
+
+    @Test
+    void aTrustworthyReadingBelowTheMinimumAfterASuspectOneStillOpensExactlyOneAlert() {
+        // Estado deixado por uma leitura suspeita (bandeja erguida): qty saturada em 0
+        // e a flag suspect gravada. Sem tratar a leitura seguinte como estado, o
+        // "estava acima" seria falso e a ruptura real passaria despercebida.
+        ShelfSlot s = slot(0);
+        s.setSuspect(true);
+        s.setMinQty(5);
+        wire(s);
+
+        shelfService.processWeight(deviceId, now, 3200.0, true);  // 3000g = 3 unidades, confiavel
+
+        verify(alertService, times(1)).open(eq(storeId), eq(deviceId), eq(s.getId()),
+                eq(AlertService.TYPE_STOCK_LOW), eq("high"), contains("Arroz 1kg"));
+    }
+
+    @Test
+    void aTrustworthyReadingAboveTheMinimumAfterASuspectOneResolvesInsteadOfOpening() {
+        ShelfSlot s = slot(0);
+        s.setSuspect(true);
+        s.setMinQty(5);
+        wire(s);
+
+        shelfService.processWeight(deviceId, now, 8200.0, true);  // 8000g = 8 unidades
+
+        verify(alertService).resolveForSlot(s.getId(), AlertService.TYPE_STOCK_LOW);
+        verify(alertService, never()).open(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
     void aSuspectReadingDoesNotResolveAnExistingAlert() {
         ShelfSlot s = slot(2);
         s.setMinQty(5);
