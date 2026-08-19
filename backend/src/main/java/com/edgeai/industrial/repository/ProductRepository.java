@@ -10,7 +10,8 @@ import java.util.UUID;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, UUID> {
 
-    List<Product> findByStoreIdOrderByNameAsc(UUID storeId);
+    /** Only active products: a soft-deleted one must not stay bindable to a slot. */
+    List<Product> findByStoreIdAndActiveTrueOrderByNameAsc(UUID storeId);
 
     Optional<Product> findByIdAndStoreId(UUID id, UUID storeId);
 }

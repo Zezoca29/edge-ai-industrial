@@ -60,13 +60,13 @@ class ProductControllerTest {
         p.setName("Arroz 1kg");
         p.setUnitWeightG(1000.0);
         p.setToleranceG(15.0);
-        when(productRepository.findByStoreIdOrderByNameAsc(storeA)).thenReturn(List.of(p));
+        when(productRepository.findByStoreIdAndActiveTrueOrderByNameAsc(storeA)).thenReturn(List.of(p));
 
         List<ProductDto> result = productController.list();
 
         assertEquals(1, result.size());
         assertEquals("Arroz 1kg", result.get(0).name());
-        verify(productRepository).findByStoreIdOrderByNameAsc(storeA);
+        verify(productRepository).findByStoreIdAndActiveTrueOrderByNameAsc(storeA);
     }
 
     @Test
@@ -94,11 +94,35 @@ class ProductControllerTest {
     }
 
     @Test
-    void listUsesTheStoreOfWhoeverIsAuthenticated() {
-        authenticateAs(storeB);
-        when(productRepository.findByStoreIdOrderByNameAsc(storeB)).thenReturn(List.of());
+    void listOnlyAsksForActiveProductsSoASoftDeletedOneCannotBeBoundToASlot() {
+        when(productRepository.findByStoreIdAndActiveTrueOrderByNameAsc(storeA)).thenReturn(List.of());
 
         assertTrue(productController.list().isEmpty());
-        verify(productRepository, never()).findByStoreIdOrderByNameAsc(storeA);
+
+        verify(productRepository).findByStoreIdAndActiveTrueOrderByNameAsc(storeA);
+    }
+
+    @Test
+    void deactivateSoftDeletesTheProduct() {
+        UUID id = UUID.randomUUID();
+        Product p = new Product();
+        p.setId(id);
+        p.setStoreId(storeA);
+        p.setActive(true);
+        when(productRepository.findByIdAndStoreId(id, storeA)).thenReturn(Optional.of(p));
+
+        productController.deactivate(id);
+
+        assertFalse(p.getActive());
+        verify(productRepository).save(p);
+    }
+
+    @Test
+    void listUsesTheStoreOfWhoeverIsAuthenticated() {
+        authenticateAs(storeB);
+        when(productRepository.findByStoreIdAndActiveTrueOrderByNameAsc(storeB)).thenReturn(List.of());
+
+        assertTrue(productController.list().isEmpty());
+        verify(productRepository, never()).findByStoreIdAndActiveTrueOrderByNameAsc(storeA);
     }
 }

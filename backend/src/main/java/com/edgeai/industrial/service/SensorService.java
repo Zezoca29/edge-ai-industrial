@@ -49,19 +49,20 @@ public class SensorService {
         }
     }
 
-    public List<SensorReadingDto> getReadings(UUID deviceId, OffsetDateTime from, OffsetDateTime to) {
-        return sensorDataRepository.findByDeviceAndTimeRange(deviceId, from, to);
+    public List<SensorReadingDto> getReadings(UUID deviceId, UUID storeId,
+                                              OffsetDateTime from, OffsetDateTime to) {
+        return sensorDataRepository.findByDeviceAndTimeRange(deviceId, storeId, from, to);
     }
 
-    public List<SensorReadingDto> getLatestPerDevice() {
-        return sensorDataRepository.findLatestPerDevice();
+    public List<SensorReadingDto> getLatestPerDevice(UUID storeId) {
+        return sensorDataRepository.findLatestPerDevice(storeId);
     }
 
-    public List<SensorReadingDto> getRecentReadings(int minutes) {
-        return sensorDataRepository.findRecent(minutes, 1500);
+    public List<SensorReadingDto> getRecentReadings(UUID storeId, int minutes) {
+        return sensorDataRepository.findRecent(storeId, minutes, 1500);
     }
 
-    public List<SensorReadingDto> getAnomalies() {
-        return sensorDataRepository.findAnomalies(100);
+    public List<SensorReadingDto> getAnomalies(UUID storeId) {
+        return sensorDataRepository.findAnomalies(storeId, 100);
     }
 }

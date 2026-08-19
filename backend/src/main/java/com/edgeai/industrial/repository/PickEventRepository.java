@@ -36,31 +36,33 @@ public class PickEventRepository {
                 confidence);
     }
 
-    public List<PickEventDto> findRecent(int hours, int limit) {
+    public List<PickEventDto> findRecent(UUID storeId, int hours, int limit) {
         return jdbc.query("""
                 SELECT pe.time, pe.device_id, d.name AS device_name,
                        pe.product_name, pe.quantity, pe.weight_delta_kg, pe.confidence
                 FROM pick_events pe
                 JOIN devices d ON d.id = pe.device_id
-                WHERE pe.time >= NOW() - (? * INTERVAL '1 hour')
+                WHERE pe.store_id = ?
+                  AND pe.time >= NOW() - (? * INTERVAL '1 hour')
                 ORDER BY pe.time DESC
                 LIMIT ?
                 """,
-                pickEventRowMapper(), hours, limit);
+                pickEventRowMapper(), storeId, hours, limit);
     }
 
-    public List<ProductDemandDto> findDemandAggregate(int hours) {
+    public List<ProductDemandDto> findDemandAggregate(UUID storeId, int hours) {
         return jdbc.query("""
                 SELECT product_name,
                        COUNT(*)       AS total_picks,
                        SUM(quantity)  AS total_quantity,
                        MAX(time)      AS last_pick
                 FROM pick_events
-                WHERE time >= NOW() - (? * INTERVAL '1 hour')
+                WHERE store_id = ?
+                  AND time >= NOW() - (? * INTERVAL '1 hour')
                 GROUP BY product_name
                 ORDER BY total_picks DESC
                 """,
-                demandRowMapper(), hours);
+                demandRowMapper(), storeId, hours);
     }
 
     private RowMapper<PickEventDto> pickEventRowMapper() {

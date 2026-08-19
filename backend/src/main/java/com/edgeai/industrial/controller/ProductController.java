@@ -22,7 +22,7 @@ public class ProductController {
 
     @GetMapping
     public List<ProductDto> list() {
-        return productRepository.findByStoreIdOrderByNameAsc(CurrentStore.id())
+        return productRepository.findByStoreIdAndActiveTrueOrderByNameAsc(CurrentStore.id())
                 .stream().map(ProductController::toDto).toList();
     }
 

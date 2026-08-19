@@ -2,8 +2,10 @@ package com.edgeai.industrial.security;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
@@ -23,7 +25,10 @@ class CurrentStoreTest {
         SecurityContextHolder.clearContext();
 
         assertThatThrownBy(CurrentStore::id)
-                .isInstanceOf(IllegalStateException.class);
+                .isInstanceOf(ResponseStatusException.class)
+                .asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.type(ResponseStatusException.class))
+                .extracting(ResponseStatusException::getStatusCode)
+                .isEqualTo(HttpStatus.FORBIDDEN);
     }
 
     @Test
@@ -32,7 +37,10 @@ class CurrentStoreTest {
         SecurityContextHolder.getContext().setAuthentication(auth);
 
         assertThatThrownBy(CurrentStore::id)
-                .isInstanceOf(IllegalStateException.class);
+                .isInstanceOf(ResponseStatusException.class)
+                .asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.type(ResponseStatusException.class))
+                .extracting(ResponseStatusException::getStatusCode)
+                .isEqualTo(HttpStatus.FORBIDDEN);
     }
 
     @Test
@@ -42,7 +50,10 @@ class CurrentStoreTest {
         SecurityContextHolder.getContext().setAuthentication(auth);
 
         assertThatThrownBy(CurrentStore::id)
-                .isInstanceOf(IllegalStateException.class);
+                .isInstanceOf(ResponseStatusException.class)
+                .asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.type(ResponseStatusException.class))
+                .extracting(ResponseStatusException::getStatusCode)
+                .isEqualTo(HttpStatus.FORBIDDEN);
     }
 
     @Test

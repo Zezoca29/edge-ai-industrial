@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -123,6 +124,51 @@ class ShelfSlotControllerTest {
 
         ShelfSlotDto body = new ShelfSlotDto(null, null, null, null, null, null, 3, null, null, null);
         assertThrows(ResponseStatusException.class, () -> shelfSlotController.update(slotId, body));
+    }
+
+    @Test
+    void tareTurnsTheCurrentWeightIntoTheTareAndZeroesTheCount() {
+        UUID slotId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+        ShelfSlot slot = existingSlot(slotId, productId, 5);
+        slot.setCurrentWeightG(187.5);
+        slot.setSuspect(true);
+
+        when(shelfSlotRepository.findByIdAndStoreId(slotId, storeA)).thenReturn(Optional.of(slot));
+        when(productRepository.findByIdAndStoreId(productId, storeA))
+                .thenReturn(Optional.of(product(productId, storeA, "Arroz 1kg")));
+        when(shelfSlotRepository.save(any(ShelfSlot.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ShelfSlotDto result = shelfSlotController.tare(slotId);
+
+        assertEquals(187.5, result.tareG());
+        assertEquals(0, result.currentQty());
+        assertFalse(result.suspect());
+    }
+
+    @Test
+    void tareOnASlotWithNoWeightReadingYetIs409() {
+        UUID slotId = UUID.randomUUID();
+        ShelfSlot slot = existingSlot(slotId, null, null);
+        slot.setCurrentWeightG(null);
+        when(shelfSlotRepository.findByIdAndStoreId(slotId, storeA)).thenReturn(Optional.of(slot));
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> shelfSlotController.tare(slotId));
+
+        assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());
+        verify(shelfSlotRepository, never()).save(any());
+    }
+
+    @Test
+    void tareOnASlotOfAnotherStoreIs404() {
+        UUID slotId = UUID.randomUUID();
+        when(shelfSlotRepository.findByIdAndStoreId(slotId, storeA)).thenReturn(Optional.empty());
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> shelfSlotController.tare(slotId));
+
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }
 
     @Test

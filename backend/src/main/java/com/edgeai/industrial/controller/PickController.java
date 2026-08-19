@@ -2,6 +2,7 @@ package com.edgeai.industrial.controller;
 
 import com.edgeai.industrial.dto.PickEventDto;
 import com.edgeai.industrial.dto.ProductDemandDto;
+import com.edgeai.industrial.security.CurrentStore;
 import com.edgeai.industrial.service.PickService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,12 +21,12 @@ public class PickController {
     @GetMapping("/recent")
     public ResponseEntity<List<PickEventDto>> getRecent(
             @RequestParam(defaultValue = "24") int hours) {
-        return ResponseEntity.ok(pickService.getRecentPicks(hours));
+        return ResponseEntity.ok(pickService.getRecentPicks(CurrentStore.id(), hours));
     }
 
     @GetMapping("/demand")
     public ResponseEntity<List<ProductDemandDto>> getDemand(
             @RequestParam(defaultValue = "168") int hours) {
-        return ResponseEntity.ok(pickService.getProductDemand(hours));
+        return ResponseEntity.ok(pickService.getProductDemand(CurrentStore.id(), hours));
     }
 }

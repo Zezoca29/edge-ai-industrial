@@ -1,6 +1,7 @@
 package com.edgeai.industrial.controller;
 
 import com.edgeai.industrial.dto.SensorReadingDto;
+import com.edgeai.industrial.security.CurrentStore;
 import com.edgeai.industrial.service.SensorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -29,22 +30,23 @@ public class SensorController {
 
         OffsetDateTime effectiveFrom = from != null ? from : OffsetDateTime.now().minusHours(1);
         OffsetDateTime effectiveTo = to != null ? to : OffsetDateTime.now();
-        return ResponseEntity.ok(sensorService.getReadings(deviceId, effectiveFrom, effectiveTo));
+        return ResponseEntity.ok(
+                sensorService.getReadings(deviceId, CurrentStore.id(), effectiveFrom, effectiveTo));
     }
 
     @GetMapping("/latest")
     public ResponseEntity<List<SensorReadingDto>> getLatest() {
-        return ResponseEntity.ok(sensorService.getLatestPerDevice());
+        return ResponseEntity.ok(sensorService.getLatestPerDevice(CurrentStore.id()));
     }
 
     @GetMapping("/recent")
     public ResponseEntity<List<SensorReadingDto>> getRecent(
             @RequestParam(defaultValue = "60") int minutes) {
-        return ResponseEntity.ok(sensorService.getRecentReadings(minutes));
+        return ResponseEntity.ok(sensorService.getRecentReadings(CurrentStore.id(), minutes));
     }
 
     @GetMapping("/anomalies")
     public ResponseEntity<List<SensorReadingDto>> getAnomalies() {
-        return ResponseEntity.ok(sensorService.getAnomalies());
+        return ResponseEntity.ok(sensorService.getAnomalies(CurrentStore.id()));
     }
 }

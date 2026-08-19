@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -46,7 +48,12 @@ public class DeviceService {
         );
     }
 
-    public List<Device> listAll() {
-        return deviceRepository.findAll();
+    /** Devices of one store only. There is no global device list by design. */
+    public List<Device> listByStore(UUID storeId) {
+        return deviceRepository.findByStoreIdOrderByNameAsc(storeId);
+    }
+
+    public Optional<Device> findInStore(String name, UUID storeId) {
+        return deviceRepository.findByNameAndStoreId(name, storeId);
     }
 }
