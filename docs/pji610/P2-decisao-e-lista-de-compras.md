@@ -28,11 +28,13 @@ A coluna `slot_index` continua no schema, sem uso, esperando. Multi-slot vira tr
 
 A gôndola tem 90 cm. **A bandeja instrumentada não terá 90 cm.**
 
-Uma célula de carga *single point* de barra é especificada para uma plataforma de tamanho limitado — tipicamente até 20×20 cm ou 30×30 cm, conforme o modelo. Uma célula sozinha sob uma bandeja de 90 cm opera fora de especificação: carga fora do centro gera erro grande e não linear, e a leitura passa a depender de *onde* o pacote foi colocado, não de quanto pesa. Isso destruiria a contagem.
+O problema a evitar é a carga descentralizada: se a leitura depender de *onde* o pacote foi colocado em vez de quanto ele pesa, a contagem não funciona. Uma célula única sob uma bandeja grande sofre disso — é por isso que a primeira versão desta lista pedia uma barra *single point*, que é especificada para plataformas pequenas.
+
+A solução acabou sendo outra, e melhor: **quatro células nos cantos**, que é como uma balança de banheiro funciona. Com um apoio em cada canto, o ponto onde o pacote é colocado deixa de importar — a soma das quatro leituras é o peso total. O tamanho da bandeja deixa de ser uma restrição de especificação e vira uma escolha de instalação.
 
 O piloto instrumenta uma **bandeja de ~30×40 cm** apoiada sobre a prateleira, onde fica a pilha de arroz. Efeito colateral bom: atende a objeção de instalação — é uma bandeja discreta, removível para limpeza, e não uma modificação da gôndola.
 
-**Carga máxima esperada:** 5 unidades × 5 kg = 25 kg de produto, mais a bandeja. Com margem de segurança, a célula precisa ser de **50 kg**.
+**Carga máxima esperada:** 5 unidades × 5 kg = 25 kg de produto, mais a bandeja. Quatro células de 50 kg formam uma plataforma de 200 kg, com folga larga.
 
 ---
 
@@ -93,13 +95,18 @@ para os demais produtos se forem instrumentados depois.
 
 ## Montagem — o detalhe que mais estraga leitura
 
-A célula de barra mede por flexão. Ela precisa estar **fixa numa ponta e livre na outra**, com espaçadores garantindo folga acima e abaixo. Os erros clássicos:
+Cada célula de meia-ponte vai **entre a base e a bandeja, num canto**, parafusada na base por um lado e na bandeja pelo outro, com espaçadores garantindo folga acima e abaixo. Ela mede por deformação: se não puder deformar, não mede.
 
-- parafusar as duas pontas na mesma superfície — a célula não flete e a leitura não muda;
-- bandeja encostando na prateleira em algum ponto — parte do peso escapa pelo apoio;
-- cabo da célula tensionado — puxa a barra e desloca o zero.
+As quatro células se ligam ao HX711 formando **uma ponte de Wheatstone completa** — é a ligação padrão de balança de banheiro, com os fios agrupados em E+, E−, A+ e A−. Uma célula sozinha não serve sem completar a ponte com resistores, que é justamente o que torna o conjunto de quatro o caminho natural.
 
-A seta gravada no corpo da célula indica o sentido da carga, e ela aponta para baixo na montagem correta.
+Os erros clássicos:
+
+- parafusar os dois lados de uma célula na mesma superfície — ela não deforma e a leitura não muda;
+- bandeja encostando na prateleira ou na base em qualquer ponto fora das células — parte do peso escapa pelo apoio e some da conta;
+- bandeja empenada ou mole, que distribui a carga de forma imprevisível entre os cantos;
+- cabo tensionado — puxa a célula e desloca o zero.
+
+Confira a orientação indicada pelo fabricante em cada célula; montá-las com sentidos trocados faz as leituras se cancelarem parcialmente.
 
 ---
 
@@ -107,13 +114,14 @@ A seta gravada no corpo da célula indica o sentido da carga, e ela aponta para 
 
 1. Bandeja vazia montada → esse valor é a **tara**, gravada pelo botão "Tarar" em `/dashboard/settings`.
 2. Peso conhecido em cima (um pacote de arroz já pesado na balança de cozinha) → ajusta o fator de escala do HX711 no firmware.
-3. **Pesar três pacotes diferentes e usar a média** como `unit_weight_g`. Hoje o valor no banco é 5000 g nominal, e `tolerance_g = 75` é estimativa, não medição. Pacote de 5 kg varia mais que o de 1 kg.
-4. Repetir a leitura com 1, 2, 3, 4 e 5 pacotes e conferir se a contagem bate. É esse teste que responde "não dá alerta falso".
+3. **Pesar três pacotes diferentes e usar a média** como `unit_weight_g`. Hoje o valor no banco é 5000 g nominal. Pacote de 5 kg varia mais que o de 1 kg.
+4. **Medir o ruído do conjunto montado**: deixe a bandeja carregada e parada e observe a variação das leituras por alguns minutos. Esse número, e não a variação dos pacotes, é o que dita `tolerance_g` — com quatro células baratas ele deve ficar na casa das centenas de gramas, conforme a seção acima.
+5. Repetir a leitura com 1, 2, 3, 4 e 5 pacotes e conferir se a contagem bate. É esse teste que responde "não dá alerta falso".
 
 ---
 
 ## O que continua em aberto
 
 - A entrevista que originou estes números foi **simulada**. Carta de validação, fotos da gôndola e medição real do peso unitário seguem pendentes.
-- `tolerance_g = 75` para o arroz é chute; substituir pela dispersão medida dos três pacotes.
+- `tolerance_g = 75` para o arroz é chute e, pior, é uma ordem de grandeza abaixo do ruído esperado das células escolhidas. Substituir pelo ruído medido na bancada montada, sob pena de o sistema marcar toda leitura como suspeita e nunca alertar.
 - Restrição de instalação registrada: sem fio atravessando corredor, Wi-Fi disponível na loja, tomada próxima mas não adjacente.
