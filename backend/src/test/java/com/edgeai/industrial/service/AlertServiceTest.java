@@ -152,4 +152,30 @@ class AlertServiceTest {
                 () -> alertService.open(storeId, deviceId, slotId,
                         AlertService.TYPE_DEVICE_SILENT, "medium", "Sensor sem sinal"));
     }
+
+    @Test
+    void lastResolvedAtForDeviceReportsTheMostRecentResolution() {
+        OffsetDateTime resolvedAt = OffsetDateTime.now().minusMinutes(3);
+        Alert resolved = openAlert();
+        resolved.setAlertType(AlertService.TYPE_DEVICE_SILENT);
+        resolved.setShelfSlotId(null);
+        resolved.setResolvedAt(resolvedAt);
+        when(alertRepository
+                .findFirstByDeviceIdAndAlertTypeAndShelfSlotIdIsNullAndResolvedAtIsNotNullOrderByResolvedAtDesc(
+                        deviceId, AlertService.TYPE_DEVICE_SILENT))
+                .thenReturn(Optional.of(resolved));
+
+        assertEquals(Optional.of(resolvedAt),
+                alertService.lastResolvedAtForDevice(deviceId, AlertService.TYPE_DEVICE_SILENT));
+    }
+
+    @Test
+    void lastResolvedAtForDeviceIsEmptyWhenNothingWasEverResolved() {
+        when(alertRepository
+                .findFirstByDeviceIdAndAlertTypeAndShelfSlotIdIsNullAndResolvedAtIsNotNullOrderByResolvedAtDesc(
+                        deviceId, AlertService.TYPE_DEVICE_SILENT))
+                .thenReturn(Optional.empty());
+
+        assertTrue(alertService.lastResolvedAtForDevice(deviceId, AlertService.TYPE_DEVICE_SILENT).isEmpty());
+    }
 }

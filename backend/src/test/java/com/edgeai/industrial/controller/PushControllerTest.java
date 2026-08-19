@@ -119,6 +119,26 @@ class PushControllerTest {
     }
 
     @Test
+    void subscribingWithAMissingKeyIsRefusedWithBadRequest() {
+        // Sem p256dh ou auth a mensagem nunca poderia ser cifrada: a inscricao
+        // ficaria gravada e muda, e a falha so apareceria na hora do alerta.
+        List<PushSubscriptionDto> invalid = List.of(
+                new PushSubscriptionDto("", "p256dh", "auth"),
+                new PushSubscriptionDto("https://push.example/abc", null, "auth"),
+                new PushSubscriptionDto("https://push.example/abc", "  ", "auth"),
+                new PushSubscriptionDto("https://push.example/abc", "p256dh", null),
+                new PushSubscriptionDto("https://push.example/abc", "p256dh", "  "));
+
+        for (PushSubscriptionDto body : invalid) {
+            ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                    () -> pushController.subscribe(body));
+            assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        }
+
+        verifyNoInteractions(subscriptionRepository);
+    }
+
+    @Test
     void unsubscribingAnEndpointOfAnotherStoreDoesNotDeleteIt() {
         String endpoint = "https://push.example/abc";
         PushSubscription other = existingSubscription(storeB, endpoint);

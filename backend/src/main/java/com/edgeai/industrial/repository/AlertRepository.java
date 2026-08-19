@@ -15,6 +15,14 @@ public interface AlertRepository extends JpaRepository<Alert, UUID> {
     Optional<Alert> findByDeviceIdAndAlertTypeAndShelfSlotIdIsNullAndResolvedAtIsNull(
             UUID deviceId, String alertType);
 
+    /**
+     * Most recent already-resolved alert of a type for a device. Used to keep the
+     * silence rule from flapping; a finder rather than a full scan because the
+     * sweep asks this once per silent device, every minute.
+     */
+    Optional<Alert> findFirstByDeviceIdAndAlertTypeAndShelfSlotIdIsNullAndResolvedAtIsNotNullOrderByResolvedAtDesc(
+            UUID deviceId, String alertType);
+
     Optional<Alert> findByIdAndStoreId(UUID id, UUID storeId);
 
     List<Alert> findByStoreIdOrderByCreatedAtDesc(UUID storeId);

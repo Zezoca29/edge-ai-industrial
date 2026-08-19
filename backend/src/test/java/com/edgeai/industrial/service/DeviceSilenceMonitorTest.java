@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -85,5 +86,46 @@ class DeviceSilenceMonitorTest {
         monitor.sweep();
 
         verify(alertService, never()).open(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void aDeviceResolvedInsideTheLastThresholdPeriodIsNotDeclaredSilentAgain() {
+        // Deep sleep com intervalo perto do limite: sem protecao, cada despertar
+        // produziria abre -> notifica -> resolve -> abre.
+        Device d = device(OffsetDateTime.parse("2026-08-18T11:45:00Z"));  // 15 min atras
+        when(deviceRepository.findByStoreIdIsNotNull()).thenReturn(List.of(d));
+        when(alertService.lastResolvedAtForDevice(d.getId(), AlertService.TYPE_DEVICE_SILENT))
+                .thenReturn(Optional.of(OffsetDateTime.parse("2026-08-18T11:56:00Z")));  // 4 min atras
+
+        monitor.sweep();
+
+        verify(alertService, never()).open(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void aDeviceResolvedLongerAgoThanTheThresholdMayBeDeclaredSilentAgain() {
+        Device d = device(OffsetDateTime.parse("2026-08-18T11:45:00Z"));  // 15 min atras
+        when(deviceRepository.findByStoreIdIsNotNull()).thenReturn(List.of(d));
+        when(alertService.lastResolvedAtForDevice(d.getId(), AlertService.TYPE_DEVICE_SILENT))
+                .thenReturn(Optional.of(OffsetDateTime.parse("2026-08-18T11:30:00Z")));  // 30 min atras
+
+        monitor.sweep();
+
+        verify(alertService).open(eq(storeId), eq(d.getId()), isNull(),
+                eq(AlertService.TYPE_DEVICE_SILENT), eq("medium"), contains("wokwi-shelf-001"));
+    }
+
+    @Test
+    void oneFailingDeviceDoesNotAbortTheSweepForTheRest() {
+        Device broken = device(OffsetDateTime.parse("2026-08-18T11:45:00Z"));
+        Device healthySilent = device(OffsetDateTime.parse("2026-08-18T11:40:00Z"));
+        when(deviceRepository.findByStoreIdIsNotNull()).thenReturn(List.of(broken, healthySilent));
+        when(alertService.lastResolvedAtForDevice(broken.getId(), AlertService.TYPE_DEVICE_SILENT))
+                .thenThrow(new IllegalStateException("conexao caiu"));
+
+        monitor.sweep();
+
+        verify(alertService).open(eq(storeId), eq(healthySilent.getId()), isNull(),
+                eq(AlertService.TYPE_DEVICE_SILENT), eq("medium"), contains("wokwi-shelf-001"));
     }
 }

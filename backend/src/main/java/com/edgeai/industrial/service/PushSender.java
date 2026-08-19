@@ -73,20 +73,31 @@ public class PushSender {
         }
 
         for (PushSubscription subscription : subscriptions) {
-            int status = deliver(subscription, payload);
-            if (status == 404 || status == 410) {
-                // The subscription is dead — most often because the origin changed.
-                subscriptionRepository.delete(subscription);
-                log.info("Removed dead push subscription {}", subscription.getId());
-            } else if (status >= 200 && status < 300) {
-                subscription.setFailureCount(0);
-                subscription.setLastSuccessAt(OffsetDateTime.now());
-                subscriptionRepository.save(subscription);
-            } else {
-                subscription.setFailureCount(subscription.getFailureCount() + 1);
-                subscriptionRepository.save(subscription);
-                log.warn("Push to subscription {} failed with status {}", subscription.getId(), status);
+            try {
+                record(subscription, deliver(subscription, payload));
+            } catch (RuntimeException e) {
+                // deliver() already contains HTTP failures; this catches the
+                // bookkeeping around it (a repository save that fails, an
+                // unexpected error). One browser must not cost the shopkeeper the
+                // notification on his other devices.
+                log.warn("Push bookkeeping for subscription {} failed: {}", subscription.getId(), e.toString());
             }
+        }
+    }
+
+    private void record(PushSubscription subscription, int status) {
+        if (status == 404 || status == 410) {
+            // The subscription is dead — most often because the origin changed.
+            subscriptionRepository.delete(subscription);
+            log.info("Removed dead push subscription {}", subscription.getId());
+        } else if (status >= 200 && status < 300) {
+            subscription.setFailureCount(0);
+            subscription.setLastSuccessAt(OffsetDateTime.now());
+            subscriptionRepository.save(subscription);
+        } else {
+            subscription.setFailureCount(subscription.getFailureCount() + 1);
+            subscriptionRepository.save(subscription);
+            log.warn("Push to subscription {} failed with status {}", subscription.getId(), status);
         }
     }
 

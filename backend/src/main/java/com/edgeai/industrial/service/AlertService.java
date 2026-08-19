@@ -90,6 +90,17 @@ public class AlertService {
                 .ifPresent(this::stampResolved);
     }
 
+    /**
+     * When the last alert of this type for the device was resolved, if ever.
+     * Callers use it to refuse reopening an alert that has just been resolved.
+     */
+    public Optional<OffsetDateTime> lastResolvedAtForDevice(UUID deviceId, String type) {
+        return alertRepository
+                .findFirstByDeviceIdAndAlertTypeAndShelfSlotIdIsNullAndResolvedAtIsNotNullOrderByResolvedAtDesc(
+                        deviceId, type)
+                .map(Alert::getResolvedAt);
+    }
+
     @Transactional
     public void acknowledge(UUID alertId, UUID storeId, UUID userId) {
         Alert alert = alertRepository.findByIdAndStoreId(alertId, storeId)

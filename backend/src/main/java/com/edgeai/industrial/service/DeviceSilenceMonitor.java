@@ -41,28 +41,68 @@ public class DeviceSilenceMonitor {
     /** fixedDelay, not fixedRate: a slow sweep must not stack on the next one. */
     @Scheduled(fixedDelay = 60_000L, initialDelay = 60_000L)
     public void sweep() {
-        OffsetDateTime deadline = OffsetDateTime.now(clock).minus(Duration.ofMinutes(silenceMinutes));
+        OffsetDateTime now = OffsetDateTime.now(clock);
+        Duration threshold = Duration.ofMinutes(silenceMinutes);
+        OffsetDateTime deadline = now.minus(threshold);
 
         for (Device device : deviceRepository.findByStoreIdIsNotNull()) {
-            OffsetDateTime lastSeen = device.getLastSeenAt();
-            if (lastSeen == null) {
-                // Never reported at all: registered but never installed. Alerting on
-                // it would fire for every device someone created and left in a box.
-                continue;
-            }
-
-            if (lastSeen.isBefore(deadline)) {
-                String message = String.format("%s: sem sinal ha mais de %d minutos",
-                        device.getName(), silenceMinutes);
-                try {
-                    alertService.open(device.getStoreId(), device.getId(), null,
-                            AlertService.TYPE_DEVICE_SILENT, "medium", message);
-                } catch (DataIntegrityViolationException e) {
-                    log.debug("Silence alert for device {} already open", device.getId());
-                }
-            } else {
-                alertService.resolveForDevice(device.getId(), AlertService.TYPE_DEVICE_SILENT);
+            try {
+                evaluate(device, now, deadline, threshold);
+            } catch (RuntimeException e) {
+                // One unhealthy device must not silence the sweep for every device
+                // after it in the list: a store that stopped being monitored is
+                // indistinguishable from a store where nothing is wrong.
+                log.warn("Silence evaluation failed for device {}: {}", device.getId(), e.toString());
             }
         }
+    }
+
+    private void evaluate(Device device, OffsetDateTime now, OffsetDateTime deadline, Duration threshold) {
+        OffsetDateTime lastSeen = device.getLastSeenAt();
+        if (lastSeen == null) {
+            // Never reported at all: registered but never installed. Alerting on
+            // it would fire for every device someone created and left in a box.
+            return;
+        }
+
+        if (lastSeen.isBefore(deadline)) {
+            if (resolvedTooRecently(device, now, threshold)) {
+                return;
+            }
+            String message = String.format("%s: sem sinal ha mais de %d minutos",
+                    device.getName(), silenceMinutes);
+            try {
+                alertService.open(device.getStoreId(), device.getId(), null,
+                        AlertService.TYPE_DEVICE_SILENT, "medium", message);
+            } catch (DataIntegrityViolationException e) {
+                log.debug("Silence alert for device {} already open", device.getId());
+            }
+        } else {
+            alertService.resolveForDevice(device.getId(), AlertService.TYPE_DEVICE_SILENT);
+        }
+    }
+
+    /**
+     * Flap protection. A device whose wake interval sits near the threshold would
+     * otherwise produce open -> push -> resolve -> open -> push on every wake, which
+     * is precisely the stream of pointless notifications the whole design exists to
+     * avoid ("se comecar a apitar toda hora sem necessidade, o funcionario vai
+     * ignorar"). One full threshold period must pass after a resolution before the
+     * same device may be declared silent again.
+     *
+     * <p>This delays a genuine second outage by at most one threshold period; it
+     * never drops it, because the sweep runs every minute and will open as soon as
+     * the quiet window ends.
+     */
+    private boolean resolvedTooRecently(Device device, OffsetDateTime now, Duration threshold) {
+        OffsetDateTime cutoff = now.minus(threshold);
+        return alertService.lastResolvedAtForDevice(device.getId(), AlertService.TYPE_DEVICE_SILENT)
+                .filter(resolvedAt -> resolvedAt.isAfter(cutoff))
+                .map(resolvedAt -> {
+                    log.debug("Device {} was declared healthy at {}; not reopening the silence alert "
+                            + "before {} to avoid flapping", device.getId(), resolvedAt, resolvedAt.plus(threshold));
+                    return true;
+                })
+                .orElse(false);
     }
 }

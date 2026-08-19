@@ -54,8 +54,20 @@ management:
         include: health,info,metrics
 
 alerts:
-  # O firmware do P2 usa deep sleep para nao precisar de fio permanente; um
-  # dispositivo que acorda de 5 em 5 minutos nao pode ser dado como morto.
+  # REGRA DE DIMENSIONAMENTO: este valor precisa ser de no minimo TRES VEZES o
+  # intervalo de despertar do dispositivo mais lento da loja.
+  #
+  # O firmware do P2 usa deep sleep para nao precisar de fio permanente. Se o
+  # limite chegar perto do intervalo de despertar, cada ciclo do aparelho vira
+  # abre -> notifica -> resolve -> abre, e o dono passa a receber alerta falso a
+  # cada poucos minutos ate ignorar o sistema inteiro. Com 3x, uma unica
+  # transmissao perdida ainda nao mata o aparelho.
+  #
+  # Ha protecao contra oscilacao em DeviceSilenceMonitor (nao reabre dentro de um
+  # periodo apos a resolucao), mas ela e a ultima linha de defesa: o numero certo
+  # aqui e o que evita o problema. Valor atual (10 min) cobre despertar de ate
+  # ~3 min; se o firmware do P2 acordar mais devagar, aumente este numero na
+  # mesma proporcao.
   device-silence-minutes: 10
 
 push:

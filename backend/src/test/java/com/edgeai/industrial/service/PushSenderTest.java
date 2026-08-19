@@ -111,6 +111,21 @@ class PushSenderTest {
     }
 
     @Test
+    void aRepositoryFailureOnOneSubscriptionStillDeliversToTheRest() {
+        PushSubscription broken = subscription();
+        PushSubscription healthy = subscription();
+        when(subscriptionRepository.findByStoreId(storeId)).thenReturn(List.of(broken, healthy));
+        // O celular do dono nao pode ficar sem o alerta porque outro navegador quebrou.
+        when(subscriptionRepository.save(broken)).thenThrow(new IllegalStateException("banco caiu"));
+
+        senderReturning(201).onAlertOpened(
+                new AlertOpenedEvent(UUID.randomUUID(), storeId, "Estoque baixo", "Arroz: restam 4"));
+
+        verify(subscriptionRepository).save(healthy);
+        assertNotNull(healthy.getLastSuccessAt());
+    }
+
+    @Test
     void aStoreWithNoSubscriptionsIsNotAnError() {
         when(subscriptionRepository.findByStoreId(storeId)).thenReturn(List.of());
 

@@ -46,7 +46,10 @@ public class PushController {
      */
     @PostMapping("/subscriptions")
     public void subscribe(@RequestBody PushSubscriptionDto body) {
-        if (body.endpoint() == null || body.endpoint().isBlank()) {
+        // All three fields are required to encrypt a payload. Accepting a row with a
+        // missing key would persist a subscription that can never deliver anything
+        // and only fails later, deep inside the push library.
+        if (isBlank(body.endpoint()) || isBlank(body.p256dh()) || isBlank(body.auth())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Inscricao invalida");
         }
         Optional<PushSubscription> existing = subscriptionRepository.findByEndpoint(body.endpoint());
@@ -62,6 +65,10 @@ public class PushController {
         subscription.setUserId(CurrentUser.id());
         subscription.setFailureCount(0);
         subscriptionRepository.save(subscription);
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 
     @DeleteMapping("/subscriptions")
