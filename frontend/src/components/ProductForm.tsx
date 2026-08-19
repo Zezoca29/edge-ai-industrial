@@ -13,13 +13,26 @@ interface Props {
   }) => Promise<void>;
 }
 
+/**
+ * Tolerância padrão proporcional ao peso da unidade: 1,5%, com piso de 5 g.
+ * Um valor fixo de 5 g representa 0,5% de um produto de 1 kg — dentro do ruído
+ * do HX711 — e faria o slot nascer permanentemente marcado como suspeito.
+ */
+export function defaultToleranceG(unitWeightG: number): number {
+  if (!Number.isFinite(unitWeightG) || unitWeightG <= 0) return 5;
+  return Math.round(Math.max(5, unitWeightG * 0.015) * 10) / 10;
+}
+
 export function ProductForm({ onCreate }: Props) {
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
   const [unitWeightG, setUnitWeightG] = useState('');
+  const [toleranceG, setToleranceG] = useState('');
   const [priceReais, setPriceReais] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const suggestedTolerance = defaultToleranceG(Number(unitWeightG));
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -29,17 +42,22 @@ export function ProductForm({ onCreate }: Props) {
     if (!name.trim()) return setError('Informe o nome do produto.');
     if (!Number.isFinite(weight) || weight <= 0) return setError('Peso unitário deve ser maior que zero.');
 
+    const tolerance = toleranceG.trim() === '' ? defaultToleranceG(weight) : Number(toleranceG);
+    if (!Number.isFinite(tolerance) || tolerance <= 0) {
+      return setError('Tolerância deve ser maior que zero.');
+    }
+
     setSaving(true);
     try {
       await onCreate({
         name: name.trim(),
         sku: sku.trim() || null,
         unitWeightG: weight,
-        toleranceG: 5,
+        toleranceG: tolerance,
         unitPriceCents: priceReais ? Math.round(Number(priceReais) * 100) : null,
         active: true,
       });
-      setName(''); setSku(''); setUnitWeightG(''); setPriceReais('');
+      setName(''); setSku(''); setUnitWeightG(''); setToleranceG(''); setPriceReais('');
     } catch {
       setError('Não foi possível salvar o produto. Verifique se o SKU já não está em uso.');
     } finally {
@@ -64,6 +82,19 @@ export function ProductForm({ onCreate }: Props) {
         <input id="product-weight" value={unitWeightG} onChange={(e) => setUnitWeightG(e.target.value)}
           inputMode="decimal"
           className="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm text-white" />
+      </div>
+      <div className="flex flex-col gap-1">
+        <label htmlFor="product-tolerance" className="text-xs text-gray-400">
+          Tolerância (g) <span className="text-gray-500">— opcional</span>
+        </label>
+        <input id="product-tolerance" value={toleranceG} onChange={(e) => setToleranceG(e.target.value)}
+          inputMode="decimal"
+          placeholder={String(suggestedTolerance)}
+          aria-describedby="product-tolerance-help"
+          className="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm text-white" />
+        <span id="product-tolerance-help" className="text-xs text-gray-500">
+          Em branco usa {suggestedTolerance} g (1,5% do peso)
+        </span>
       </div>
       <div className="flex flex-col gap-1">
         <label htmlFor="product-price" className="text-xs text-gray-400">Preço (R$)</label>
