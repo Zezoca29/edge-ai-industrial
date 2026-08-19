@@ -299,4 +299,26 @@ class ShelfServiceTest {
 
         verify(alertService, never()).open(any(), any(), any(), any(), any(), any());
     }
+
+    @Test
+    void aSuspectReadingBelowTheMinimumOpensNoAlert() {
+        wire(slot(5));  // default minQty = 3
+
+        shelfService.processWeight(deviceId, now, 50.0, true);  // abaixo da tara de 200g: suspect
+
+        verify(alertService, never()).open(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void aSuspectReadingDoesNotResolveAnExistingAlert() {
+        ShelfSlot s = slot(2);
+        s.setMinQty(5);
+        wire(s);
+
+        // 6500g -> net 6300g = 6.3 unidades: longe de um multiplo inteiro (tolerancia
+        // 15g), portanto suspect, ainda que o valor arredondado (6) fique acima do minimo.
+        shelfService.processWeight(deviceId, now, 6500.0, true);
+
+        verify(alertService, never()).resolveForSlot(any(), any());
+    }
 }

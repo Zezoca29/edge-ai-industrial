@@ -93,7 +93,16 @@ public class ShelfService {
                     product.getName(), picked, weightDeltaKg, result.confidence());
         }
 
-        evaluateStockAlert(slot, product, deviceId, previousQty, nextQty);
+        // A suspect reading must not drive the stock alert either, opening or
+        // resolving it. The same tray-lift that would invent a pick event above
+        // would just as easily invent an "estoque baixo" notification the
+        // shopkeeper actually sees on his phone — the false alert he named as
+        // the thing that would make his staff start ignoring the system. Do not
+        // "simplify" this guard away: it costs no real detections, because a
+        // genuinely empty shelf reads exactly at the tare and is not suspect.
+        if (!result.suspect()) {
+            evaluateStockAlert(slot, product, deviceId, previousQty, nextQty);
+        }
     }
 
     private void recordWeightOnly(ShelfSlot slot, double weightG) {
