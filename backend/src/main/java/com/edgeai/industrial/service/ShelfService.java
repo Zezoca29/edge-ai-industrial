@@ -31,6 +31,7 @@ public class ShelfService {
     private final ProductRepository productRepository;
     private final PickEventRepository pickEventRepository;
     private final DeviceRepository deviceRepository;
+    private final AlertService alertService;
 
     @Transactional
     public void processWeight(UUID deviceId, OffsetDateTime time, double weightG, boolean stable) {
@@ -91,6 +92,8 @@ public class ShelfService {
             pickEventRepository.saveDerived(deviceId, time, product.getStoreId(), product.getId(),
                     product.getName(), picked, weightDeltaKg, result.confidence());
         }
+
+        evaluateStockAlert(slot, product, deviceId, previousQty, nextQty);
     }
 
     private void recordWeightOnly(ShelfSlot slot, double weightG) {
@@ -122,6 +125,42 @@ public class ShelfService {
             log.debug("Lost the race creating shelf slot {} for device {}; re-reading",
                     DEFAULT_SLOT, deviceId);
             return shelfSlotRepository.findByDeviceIdAndSlotIndex(deviceId, DEFAULT_SLOT).orElse(null);
+        }
+    }
+
+    /**
+     * An alert is a transition, not a state. Raising one on every reading while
+     * the shelf stays low is how a notification becomes noise the staff learns
+     * to ignore — the failure the shopkeeper named as the one that would kill
+     * his trust in the system.
+     *
+     * <p>The 0.6-unit deadband in {@link ShelfCalculator} already keeps the
+     * count from trembling at the threshold, so no extra debounce is needed here.
+     */
+    private void evaluateStockAlert(ShelfSlot slot, Product product, UUID deviceId,
+                                    Integer previousQty, int nextQty) {
+        if (!Boolean.TRUE.equals(product.getActive())) {
+            return;
+        }
+        int min = slot.getMinQty();
+
+        boolean wasAbove = previousQty == null || previousQty > min;
+        boolean isAtOrBelow = nextQty <= min;
+
+        if (wasAbove && isAtOrBelow) {
+            String message = String.format("%s: restam %d unidades, minimo %d",
+                    product.getName(), nextQty, min);
+            try {
+                alertService.open(product.getStoreId(), deviceId, slot.getId(),
+                        AlertService.TYPE_STOCK_LOW, "high", message);
+            } catch (DataIntegrityViolationException e) {
+                // The partial unique index refused a concurrent duplicate. The alert
+                // already exists, which is the outcome we wanted; the reading itself
+                // must not be lost over it.
+                log.debug("Stock alert for slot {} already open", slot.getId());
+            }
+        } else if (!isAtOrBelow && previousQty != null && previousQty <= min) {
+            alertService.resolveForSlot(slot.getId(), AlertService.TYPE_STOCK_LOW);
         }
     }
 }

@@ -31,6 +31,7 @@ class ShelfServiceTest {
     @Mock private ProductRepository productRepository;
     @Mock private PickEventRepository pickEventRepository;
     @Mock private DeviceRepository deviceRepository;
+    @Mock private AlertService alertService;
 
     @InjectMocks private ShelfService shelfService;
 
@@ -246,5 +247,56 @@ class ShelfServiceTest {
         assertSame(winner, captor.getValue());
         assertEquals(5200.0, captor.getValue().getCurrentWeightG());
         verifyNoInteractions(pickEventRepository);
+    }
+
+    @Test
+    void crossingBelowTheMinimumOpensExactlyOneStockAlert() {
+        ShelfSlot s = slot(6);
+        s.setMinQty(5);
+        wire(s);
+
+        shelfService.processWeight(deviceId, now, 4200.0, true);  // 4000g = 4 unidades
+
+        verify(alertService).open(eq(storeId), eq(deviceId), eq(s.getId()),
+                eq(AlertService.TYPE_STOCK_LOW), eq("high"), contains("Arroz 1kg"));
+    }
+
+    @Test
+    void stayingBelowTheMinimumDoesNotOpenAnotherAlert() {
+        ShelfSlot s = slot(4);
+        s.setMinQty(5);
+        wire(s);
+
+        shelfService.processWeight(deviceId, now, 3200.0, true);  // 3000g = 3 unidades
+
+        verify(alertService, never()).open(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void climbingBackAboveTheMinimumResolvesTheAlert() {
+        ShelfSlot s = slot(4);
+        s.setMinQty(5);
+        wire(s);
+
+        shelfService.processWeight(deviceId, now, 8200.0, true);  // 8000g = 8 unidades
+
+        verify(alertService).resolveForSlot(s.getId(), AlertService.TYPE_STOCK_LOW);
+        verify(alertService, never()).open(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void anInactiveProductNeverRaisesAStockAlert() {
+        ShelfSlot s = slot(6);
+        s.setMinQty(5);
+        when(shelfSlotRepository.findByDeviceIdAndSlotIndex(deviceId, (short) 0))
+                .thenReturn(Optional.of(s));
+        Product inactive = product();
+        inactive.setActive(false);
+        when(productRepository.findById(productId)).thenReturn(Optional.of(inactive));
+        when(deviceRepository.findById(deviceId)).thenReturn(Optional.of(device(storeId)));
+
+        shelfService.processWeight(deviceId, now, 4200.0, true);
+
+        verify(alertService, never()).open(any(), any(), any(), any(), any(), any());
     }
 }
