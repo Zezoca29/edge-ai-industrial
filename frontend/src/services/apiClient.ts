@@ -32,7 +32,15 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     throw new Error('Unauthorized');
   }
   if (!res.ok) throw new ApiError(res.status);
-  return res.json();
+
+  // Several endpoints (acknowledge, subscribe, unsubscribe, ping) return
+  // `void` on the backend, which Spring answers as 200/204 with an empty
+  // body. `res.json()` throws SyntaxError on an empty body, so read as text
+  // first and only parse when there is actually something to parse. Do not
+  // "simplify" this back to `res.json()`.
+  if (res.status === 204) return undefined as T;
+  const text = await res.text();
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 export const apiClient = {
