@@ -52,3 +52,8 @@ management:
     web:
       exposure:
         include: health,info,metrics
+
+alerts:
+  # O firmware do P2 usa deep sleep para nao precisar de fio permanente; um
+  # dispositivo que acorda de 5 em 5 minutos nao pode ser dado como morto.
+  device-silence-minutes: 10

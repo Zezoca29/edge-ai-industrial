@@ -22,4 +22,6 @@ public interface DeviceRepository extends JpaRepository<Device, UUID> {
     @Modifying
     @Query("UPDATE Device d SET d.status = :status, d.lastSeenAt = :lastSeenAt, d.updatedAt = :updatedAt WHERE d.id = :id")
     void updateStatusAndLastSeen(UUID id, String status, OffsetDateTime lastSeenAt, OffsetDateTime updatedAt);
+
+    List<Device> findByStoreIdIsNotNull();
 }
