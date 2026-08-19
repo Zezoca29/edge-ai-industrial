@@ -40,6 +40,10 @@ dependencies {
     // Database
     runtimeOnly 'org.postgresql:postgresql'
 
+    // Web Push (VAPID). Traz BouncyCastle junto.
+    implementation 'nl.martijndwars:web-push:5.1.1'
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.78.1'
+
     // Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'

@@ -57,3 +57,11 @@ alerts:
   # O firmware do P2 usa deep sleep para nao precisar de fio permanente; um
   # dispositivo que acorda de 5 em 5 minutos nao pode ser dado como morto.
   device-silence-minutes: 10
+
+push:
+  vapid:
+    # Geradas fora do repositorio. Sem elas, o push fica desligado e o alerta
+    # continua sendo gravado normalmente.
+    public-key: ${PUSH_VAPID_PUBLIC_KEY:}
+    private-key: ${PUSH_VAPID_PRIVATE_KEY:}
+    subject: mailto:admin@edgeai.local
