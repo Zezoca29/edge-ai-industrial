@@ -655,8 +655,15 @@
     lines.push('-- V007 - Produtos reais levantados na visita ao comerciante (P0).');
     lines.push('-- Substitui os quatro produtos de exemplo do V005.');
     lines.push('');
+    lines.push('-- Aposenta os produtos de exemplo.');
     lines.push('UPDATE products SET active = FALSE');
-    lines.push('WHERE store_id = ' + sqlText(STORE_UUID) + " AND sku LIKE '%-%' AND sku IN ('ARZ-1KG','FJO-1KG','LTE-1L','CAF-500');");
+    lines.push('WHERE store_id = ' + sqlText(STORE_UUID) + " AND sku IN ('ARZ-1KG','FJO-1KG','LTE-1L','CAF-500');");
+    lines.push('');
+    lines.push('-- Nenhum slot pode continuar apontando para um produto aposentado:');
+    lines.push('-- a contagem que ele carrega e do produto antigo.');
+    lines.push('UPDATE shelf_slots SET product_id = NULL, current_qty = NULL, suspect = FALSE');
+    lines.push('WHERE product_id IN (SELECT id FROM products WHERE store_id = ' + sqlText(STORE_UUID));
+    lines.push("    AND sku IN ('ARZ-1KG','FJO-1KG','LTE-1L','CAF-500'));");
     lines.push('');
     lines.push('INSERT INTO products (store_id, name, sku, unit_weight_g, tolerance_g, unit_price_cents)');
     lines.push('VALUES');
