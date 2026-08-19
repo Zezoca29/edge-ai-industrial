@@ -38,5 +38,7 @@ docker-compose.override.yml
 
 # === ML Models (generated artifacts) ===
 firmware/models/model.tflite
-firmware/models/__pycache__/
-firmware/models/tests/__pycache__/
+
+# === Python bytecode (anywhere) ===
+__pycache__/
+*.pyc
