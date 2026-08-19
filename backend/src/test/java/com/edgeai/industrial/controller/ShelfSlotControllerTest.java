@@ -51,7 +51,7 @@ class ShelfSlotControllerTest {
     private void authenticateAs(UUID storeId) {
         StoreUserDetails principal = new StoreUserDetails(
                 "user@loja.local", "hash",
-                List.of(new SimpleGrantedAuthority("ROLE_ADMIN")), storeId);
+                List.of(new SimpleGrantedAuthority("ROLE_ADMIN")), storeId, UUID.randomUUID());
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
     }

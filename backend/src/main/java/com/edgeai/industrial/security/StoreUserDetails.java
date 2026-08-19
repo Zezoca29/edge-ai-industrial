@@ -11,11 +11,13 @@ import java.util.UUID;
 public class StoreUserDetails extends org.springframework.security.core.userdetails.User {
 
     private final UUID storeId;
+    private final UUID userId;
 
     public StoreUserDetails(String username, String password,
                             Collection<? extends GrantedAuthority> authorities,
-                            UUID storeId) {
+                            UUID storeId, UUID userId) {
         super(username, password, authorities);
         this.storeId = storeId;
+        this.userId = userId;
     }
 }

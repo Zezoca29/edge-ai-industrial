@@ -23,7 +23,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                         user.getEmail(),
                         user.getPasswordHash(),
                         List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().toUpperCase())),
-                        user.getStoreId()
+                        user.getStoreId(),
+                        user.getId()
                 ))
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
     }

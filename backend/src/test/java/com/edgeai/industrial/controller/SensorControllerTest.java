@@ -48,7 +48,7 @@ class SensorControllerTest {
 
     private static StoreUserDetails principal(UUID storeId) {
         return new StoreUserDetails("user@loja.local", "hash",
-                List.of(new SimpleGrantedAuthority("ROLE_ADMIN")), storeId);
+                List.of(new SimpleGrantedAuthority("ROLE_ADMIN")), storeId, UUID.randomUUID());
     }
 
     @Test

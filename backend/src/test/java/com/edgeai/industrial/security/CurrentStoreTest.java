@@ -45,7 +45,7 @@ class CurrentStoreTest {
 
     @Test
     void throwsWhenStoreUserDetailsHasNullStoreId() {
-        StoreUserDetails details = new StoreUserDetails("user@edgeai.local", "hash", List.of(), null);
+        StoreUserDetails details = new StoreUserDetails("user@edgeai.local", "hash", List.of(), null, UUID.randomUUID());
         var auth = new UsernamePasswordAuthenticationToken(details, null, details.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(auth);
 
@@ -59,7 +59,7 @@ class CurrentStoreTest {
     @Test
     void returnsStoreIdWhenPresent() {
         UUID storeId = UUID.randomUUID();
-        StoreUserDetails details = new StoreUserDetails("user@edgeai.local", "hash", List.of(), storeId);
+        StoreUserDetails details = new StoreUserDetails("user@edgeai.local", "hash", List.of(), storeId, UUID.randomUUID());
         var auth = new UsernamePasswordAuthenticationToken(details, null, details.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(auth);
 
