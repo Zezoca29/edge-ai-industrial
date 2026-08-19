@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/push")
@@ -33,14 +34,27 @@ public class PushController {
         return Map.of("publicKey", publicKey);
     }
 
-    /** Re-subscribing from the same browser updates the row rather than duplicating it. */
+    /**
+     * Re-subscribing from the same browser updates the row rather than duplicating it.
+     *
+     * <p>Push endpoint URLs are not secrets, so a row belonging to another store is a
+     * reachable case, not a paranoia case: an authenticated user of one store could
+     * submit another store's endpoint and, if we overwrote it, redirect that store's
+     * alert content to their own browser. There is exactly one store per subscription
+     * and no legitimate flow that hands the same endpoint to two stores, so a mismatch
+     * is refused outright rather than silently rescoped.
+     */
     @PostMapping("/subscriptions")
     public void subscribe(@RequestBody PushSubscriptionDto body) {
         if (body.endpoint() == null || body.endpoint().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Inscricao invalida");
         }
-        PushSubscription subscription = subscriptionRepository.findByEndpoint(body.endpoint())
-                .orElseGet(PushSubscription::new);
+        Optional<PushSubscription> existing = subscriptionRepository.findByEndpoint(body.endpoint());
+        if (existing.isPresent() && !existing.get().getStoreId().equals(CurrentStore.id())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Este dispositivo ja esta registrado para outra loja");
+        }
+        PushSubscription subscription = existing.orElseGet(PushSubscription::new);
         subscription.setEndpoint(body.endpoint());
         subscription.setP256dh(body.p256dh());
         subscription.setAuth(body.auth());
