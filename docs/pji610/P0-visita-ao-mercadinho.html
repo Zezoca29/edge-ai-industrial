@@ -1,0 +1,730 @@
+<title>Visita ao Mercadinho</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --paper:      #F7F9F7;
+    --surface:    #FFFFFF;
+    --ink:        #131C18;
+    --ink-soft:   #4B5A53;
+    --ink-faint:  #77857E;
+    --verde:      #14624A;
+    --verde-soft: #E4EFEA;
+    --ruptura:    #A8412A;
+    --rule:       #DCE4DF;
+    --field:      #FFFFFF;
+
+    --step--1: 0.815rem;
+    --step-0:  1rem;
+    --step-1:  1.21rem;
+    --step-2:  1.52rem;
+    --step-3:  1.95rem;
+    --step-4:  2.55rem;
+
+    --sans: "Archivo", ui-sans-serif, system-ui, sans-serif;
+    --serif: "Newsreader", Georgia, "Times New Roman", serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #0F1411;
+      --surface:    #171F1B;
+      --ink:        #E7EEE9;
+      --ink-soft:   #A8B7B0;
+      --ink-faint:  #7C8B84;
+      --verde:      #57C79A;
+      --verde-soft: #172A22;
+      --ruptura:    #E08268;
+      --rule:       #26332C;
+      --field:      #101714;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:      #0F1411;
+    --surface:    #171F1B;
+    --ink:        #E7EEE9;
+    --ink-soft:   #A8B7B0;
+    --ink-faint:  #7C8B84;
+    --verde:      #57C79A;
+    --verde-soft: #172A22;
+    --ruptura:    #E08268;
+    --rule:       #26332C;
+    --field:      #101714;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: var(--step-0);
+    line-height: 1.6;
+    margin: 0;
+    padding: 0 1.15rem 5rem;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .wrap {
+    max-width: 41rem;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 3.25rem;
+  }
+
+  h1, h2, h3, .label, .eyebrow, button, input, select {
+    font-family: var(--sans);
+  }
+
+  h1 {
+    font-size: var(--step-4);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.08;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  h2 {
+    font-size: var(--step-2);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1.2;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  h3 {
+    font-size: var(--step-0);
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    margin: 0;
+  }
+
+  p { margin: 0; }
+  a { color: var(--verde); }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    font-weight: 500;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  /* ── Cabeçalho ───────────────────────────────── */
+
+  header {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding-top: 3.5rem;
+  }
+
+  .standfirst {
+    font-size: var(--step-1);
+    color: var(--ink-soft);
+    max-width: 34ch;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.5rem;
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    color: var(--ink-faint);
+    border-top: 1px solid var(--rule);
+    padding-top: 1rem;
+  }
+
+  /* ── Blocos ──────────────────────────────────── */
+
+  section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.15rem;
+  }
+
+  .block-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.85rem;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 0.6rem;
+  }
+
+  .num {
+    font-family: var(--mono);
+    font-size: var(--step-0);
+    font-weight: 600;
+    color: var(--verde);
+    flex: none;
+  }
+
+  .time {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    color: var(--ink-faint);
+    flex: none;
+  }
+
+  /* ── Perguntas ───────────────────────────────── */
+
+  .q {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding-left: 1rem;
+    border-left: 2px solid var(--verde-soft);
+  }
+
+  .q .ask {
+    font-size: var(--step-1);
+    line-height: 1.45;
+  }
+
+  .q .why {
+    font-family: var(--sans);
+    font-size: var(--step--1);
+    color: var(--ink-faint);
+    line-height: 1.5;
+  }
+
+  .q .why b { color: var(--ink-soft); font-weight: 600; }
+
+  .note {
+    background: var(--verde-soft);
+    border-radius: 3px;
+    padding: 0.9rem 1rem;
+    font-family: var(--sans);
+    font-size: var(--step--1);
+    line-height: 1.55;
+    color: var(--ink-soft);
+  }
+
+  .note strong { color: var(--ink); }
+
+  .warn {
+    border-left: 3px solid var(--ruptura);
+    background: none;
+    padding-left: 1rem;
+    border-radius: 0;
+  }
+
+  /* ── Checklist ───────────────────────────────── */
+
+  .checks {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  .checks li {
+    display: flex;
+    gap: 0.7rem;
+    align-items: flex-start;
+    font-family: var(--sans);
+    font-size: var(--step-0);
+    line-height: 1.45;
+  }
+
+  .checks input[type="checkbox"] {
+    margin: 0.28rem 0 0;
+    width: 1.05rem;
+    height: 1.05rem;
+    accent-color: var(--verde);
+    flex: none;
+  }
+
+  .checks .hint {
+    display: block;
+    font-size: var(--step--1);
+    color: var(--ink-faint);
+  }
+
+  /* ── Formulário ──────────────────────────────── */
+
+  .rows {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .row {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 1rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .row .span2 { grid-column: 1 / -1; }
+
+  .fld {
+    display: flex;
+    flex-direction: column;
+    gap: 0.28rem;
+    min-width: 0;
+  }
+
+  .label {
+    font-size: var(--step--1);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--ink-soft);
+  }
+
+  input, select {
+    background: var(--field);
+    color: var(--ink);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 0.5rem 0.6rem;
+    font-size: var(--step-0);
+    width: 100%;
+    min-width: 0;
+  }
+
+  input[inputmode="decimal"], input[inputmode="numeric"] {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  input:focus-visible, select:focus-visible, button:focus-visible,
+  input[type="checkbox"]:focus-visible {
+    outline: 2px solid var(--verde);
+    outline-offset: 2px;
+  }
+
+  .row-head {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .row-n {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    color: var(--ink-faint);
+    letter-spacing: 0.06em;
+  }
+
+  button {
+    font-size: var(--step--1);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    border-radius: 3px;
+    border: 1px solid var(--verde);
+    background: var(--verde);
+    color: var(--paper);
+    padding: 0.55rem 0.95rem;
+    cursor: pointer;
+  }
+
+  button.ghost {
+    background: none;
+    color: var(--verde);
+  }
+
+  button.quiet {
+    background: none;
+    border-color: var(--rule);
+    color: var(--ink-faint);
+    padding: 0.3rem 0.55rem;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    align-items: center;
+  }
+
+  .status {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    color: var(--ink-faint);
+  }
+
+  /* ── Saída SQL ───────────────────────────────── */
+
+  pre {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 1rem;
+    overflow-x: auto;
+    margin: 0;
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    line-height: 1.65;
+    color: var(--ink);
+    tab-size: 2;
+  }
+
+  footer {
+    border-top: 1px solid var(--rule);
+    padding-top: 1.25rem;
+    font-family: var(--sans);
+    font-size: var(--step--1);
+    color: var(--ink-faint);
+    line-height: 1.6;
+  }
+
+  @media (min-width: 34rem) {
+    .row { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .row .wide { grid-column: span 2; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">PJI610 · Sub-projeto P0</p>
+    <h1>Visita ao Mercadinho</h1>
+    <p class="standfirst">Uma conversa de 40 minutos que transforma o projeto de demonstração em evidência.</p>
+    <div class="meta">
+      <span>Duração 40–50 min</span>
+      <span>Leve: balança de cozinha</span>
+      <span>Saída: seed V007</span>
+    </div>
+  </header>
+
+  <section>
+    <div class="block-head">
+      <span class="num">00</span>
+      <h2>Antes de sair de casa</h2>
+    </div>
+    <ul class="checks">
+      <li><input type="checkbox" id="c1"><label for="c1">Balança de cozinha digital <span class="hint">precisa acusar 1 g — a de banheiro não serve</span></label></li>
+      <li><input type="checkbox" id="c2"><label for="c2">Celular carregado, com esta página aberta</label></li>
+      <li><input type="checkbox" id="c3"><label for="c3">Sacola ou bandeja rasa <span class="hint">para pesar o produto fora da gôndola sem derrubar</span></label></li>
+      <li><input type="checkbox" id="c4"><label for="c4">Combinar o horário fora do pico <span class="hint">meio da tarde em dia de semana; sábado de manhã ninguém vai te dar atenção</span></label></li>
+    </ul>
+    <div class="note warn">
+      <strong>Não abra a conversa apresentando o sistema.</strong> Se você contar a solução primeiro, o dono vai ser educado e concordar com tudo — e você volta para casa com simpatia em vez de dados. Fale do problema dele primeiro; o projeto aparece no bloco 05, quando você já souber se ele existe.
+    </div>
+  </section>
+
+  <section>
+    <div class="block-head">
+      <span class="num">01</span>
+      <h2>Abertura</h2>
+      <span class="time">3 min</span>
+    </div>
+    <div class="q">
+      <p class="ask">"Sou estudante da UNIVESP e estou fazendo meu projeto final sobre controle de estoque em comércio de bairro. Posso te tomar uns 40 minutos e tirar algumas fotos das prateleiras?"</p>
+      <p class="why">Peça a autorização para fotografar <b>agora</b>, não depois de já ter fotografado. As fotos entram no relatório do TCC.</p>
+    </div>
+    <div class="q">
+      <p class="ask">"Há quanto tempo o senhor toca a loja? Quantas pessoas trabalham aqui?"</p>
+      <p class="why">Aquece a conversa e já te dá o porte do negócio, que você vai usar no dimensionamento de mercado do P5.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="block-head">
+      <span class="num">02</span>
+      <h2>O problema, sem induzir</h2>
+      <span class="time">10 min</span>
+    </div>
+    <div class="q">
+      <p class="ask">"Me conta como é um dia normal aqui. O que mais te dá trabalho?"</p>
+      <p class="why">Pergunta aberta, de propósito. Se ruptura de gôndola for um problema real, ela aparece sozinha — e aí você tem uma evidência que não foi você quem plantou.</p>
+    </div>
+    <div class="q">
+      <p class="ask">"Como o senhor sabe que está na hora de repor alguma coisa?"</p>
+      <p class="why">Aqui você descobre o processo atual: olho, caderno, planilha, sistema. É a linha de base contra a qual seu projeto vai ser comparado.</p>
+    </div>
+    <div class="q">
+      <p class="ask">"Quando foi a última vez que acabou um produto na prateleira sem o senhor perceber?"</p>
+      <p class="why">Fato passado e específico, não opinião sobre o futuro. "Já aconteceu?" convida a um sim genérico; "quando foi a última vez" obriga a lembrar de um caso concreto.</p>
+    </div>
+    <div class="q">
+      <p class="ask">"E o que aconteceu? O cliente esperou, levou outro, ou foi embora?"</p>
+      <p class="why">É a diferença entre venda adiada e venda perdida — e é o número que sustenta o plano de negócios.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="block-head">
+      <span class="num">03</span>
+      <h2>Medir a dor</h2>
+      <span class="time">8 min</span>
+    </div>
+    <div class="q">
+      <p class="ask">"Numa semana normal, quantas vezes o senhor diria que isso acontece?"</p>
+      <p class="why">Aceite a estimativa dele. Você não está auditando, está dimensionando ordem de grandeza: uma vez por mês e três vezes por semana são projetos diferentes.</p>
+    </div>
+    <div class="q">
+      <p class="ask">"Quais são os produtos que mais somem sem avisar?"</p>
+      <p class="why">Esta é <b>a</b> pergunta da visita. As respostas viram os produtos-piloto do bloco 05 e o seed do banco. Anote as palavras exatas dele, inclusive a marca.</p>
+    </div>
+    <div class="q">
+      <p class="ask">"Se o senhor soubesse pelo celular, na hora, que faltou um desses — mudaria alguma coisa?"</p>
+      <p class="why">Primeira vez que a solução aparece, e ainda como pergunta. Se a resposta for morna, escute o porquê com atenção: pode ser que o problema real seja outro, e é melhor descobrir agora do que em dezembro.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="block-head">
+      <span class="num">04</span>
+      <h2>Medir e fotografar</h2>
+      <span class="time">15 min</span>
+    </div>
+    <ul class="checks">
+      <li><input type="checkbox" id="m1"><label for="m1">Pesar <b>uma unidade</b> de cada produto-piloto <span class="hint">é o número que converte peso em quantidade; erra ele e a contagem inteira erra</span></label></li>
+      <li><input type="checkbox" id="m2"><label for="m2">Pesar a bandeja ou o suporte vazio <span class="hint">é a tara; se o produto fica direto na chapa, anote 0</span></label></li>
+      <li><input type="checkbox" id="m3"><label for="m3">Anotar o preço de etiqueta de cada um</label></li>
+      <li><input type="checkbox" id="m4"><label for="m4">Medir a prateleira: largura, profundidade e quantas unidades cabem</label></li>
+      <li><input type="checkbox" id="m5"><label for="m5">Fotografar a gôndola cheia, e de novo com um vão <span class="hint">o antes e depois vale mais que um parágrafo no relatório</span></label></li>
+      <li><input type="checkbox" id="m6"><label for="m6">Fotografar de onde sai a tomada mais próxima <span class="hint">o ESP32 precisa de energia; isso decide se é USB, bateria ou nada feito</span></label></li>
+      <li><input type="checkbox" id="m7"><label for="m7">Perguntar se tem Wi-Fi na loja e se pega na prateleira</label></li>
+    </ul>
+    <div class="note">
+      <strong>Pesagem que presta:</strong> pese três unidades diferentes do mesmo produto e use a média. Pacote de arroz varia; se você calibrar pelo único pacote que estava na mão, a tolerância vira chute.
+    </div>
+  </section>
+
+  <section>
+    <div class="block-head">
+      <span class="num">05</span>
+      <h2>Fechamento</h2>
+      <span class="time">5 min</span>
+    </div>
+    <div class="q">
+      <p class="ask">"O que eu quero montar é um sensor embaixo da prateleira que avisa no celular quando o produto está acabando. Eu instalaria numa prateleira só, sem custo, para testar. O senhor toparia?"</p>
+      <p class="why">Agora sim a solução, no fim, depois dos dados. Um "sim" aqui vale como carta de validação no TCC — e um "não" com motivo vale quase tanto.</p>
+    </div>
+    <div class="q">
+      <p class="ask">"Posso voltar em algumas semanas para mostrar como ficou?"</p>
+      <p class="why">A segunda visita, com o protótipo funcionando, é o teste de usabilidade do P5. Combine já.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="block-head">
+      <span class="num">06</span>
+      <h2>Produtos-piloto</h2>
+    </div>
+    <p style="color: var(--ink-soft);">Preencha aqui mesmo, na loja. Fica salvo neste aparelho e vira o seed do banco no fim da página.</p>
+    <div class="rows" id="rows"></div>
+    <div class="actions">
+      <button type="button" class="ghost" id="add">+ Adicionar produto</button>
+      <span class="status" id="saved">salvo neste aparelho</span>
+    </div>
+  </section>
+
+  <section>
+    <div class="block-head">
+      <span class="num">07</span>
+      <h2>Seed gerado</h2>
+    </div>
+    <p style="color: var(--ink-soft);">Cole como <code style="font-family: var(--mono);">database/migrations/V007__seed_real_store.sql</code> e aplique. Substitui os quatro produtos de exemplo pelos reais.</p>
+    <pre id="sql">Preencha ao menos um produto acima.</pre>
+    <div class="actions">
+      <button type="button" id="copy">Copiar SQL</button>
+      <span class="status" id="copied"></span>
+    </div>
+  </section>
+
+  <footer>
+    <p><strong>Depois da visita:</strong> aplique o V007, vincule cada produto à sua prateleira em <code style="font-family: var(--mono);">/dashboard/settings</code>, e ajuste o estoque mínimo para o número de unidades que dá tempo de repor. As fotos e as respostas dos blocos 02 e 03 são a matéria-prima do plano de negócios do P5 — transcreva no mesmo dia, enquanto você ainda lembra do tom das respostas.</p>
+  </footer>
+
+</div>
+
+<script>
+  const STORE_UUID = '11111111-1111-1111-1111-111111111111';
+  const KEY = 'p0-visita-mercadinho';
+
+  const FIELDS = [
+    { k: 'nome',  label: 'Produto',            cls: 'wide span2', type: 'text',    ph: 'Arroz Tio João 1kg' },
+    { k: 'sku',   label: 'Código',             cls: '',           type: 'text',    ph: 'ARZ-1KG' },
+    { k: 'peso',  label: 'Peso unitário (g)',  cls: '',           type: 'decimal', ph: '1000' },
+    { k: 'preco', label: 'Preço (R$)',         cls: '',           type: 'decimal', ph: '6,50' },
+    { k: 'tara',  label: 'Tara da bandeja (g)',cls: '',           type: 'decimal', ph: '200' },
+    { k: 'min',   label: 'Repor com quantas?', cls: '',           type: 'numeric', ph: '3' },
+    { k: 'falta', label: 'Falta/semana',       cls: '',           type: 'numeric', ph: '2' }
+  ];
+
+  let data = [];
+  try { data = JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { data = []; }
+  if (!data.length) data = [blank()];
+
+  function blank() {
+    return { nome: '', sku: '', peso: '', preco: '', tara: '', min: '', falta: '' };
+  }
+
+  function num(v) {
+    const n = parseFloat(String(v).replace(',', '.'));
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function sqlText(s) {
+    return "'" + String(s).replace(/'/g, "''") + "'";
+  }
+
+  function render() {
+    const host = document.getElementById('rows');
+    host.textContent = '';
+
+    data.forEach((item, i) => {
+      const row = document.createElement('div');
+      row.className = 'row';
+
+      const head = document.createElement('div');
+      head.className = 'row-head';
+      const n = document.createElement('span');
+      n.className = 'row-n';
+      n.textContent = 'PRODUTO ' + String(i + 1).padStart(2, '0');
+      head.appendChild(n);
+
+      if (data.length > 1) {
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'quiet';
+        del.textContent = 'Remover';
+        del.addEventListener('click', () => { data.splice(i, 1); persist(); render(); });
+        head.appendChild(del);
+      }
+      row.appendChild(head);
+
+      FIELDS.forEach(f => {
+        const wrap = document.createElement('div');
+        wrap.className = 'fld ' + f.cls;
+
+        const id = 'f-' + i + '-' + f.k;
+        const lab = document.createElement('label');
+        lab.className = 'label';
+        lab.setAttribute('for', id);
+        lab.textContent = f.label;
+
+        const inp = document.createElement('input');
+        inp.id = id;
+        inp.value = item[f.k] || '';
+        inp.placeholder = f.ph;
+        if (f.type === 'decimal') inp.inputMode = 'decimal';
+        if (f.type === 'numeric') inp.inputMode = 'numeric';
+        inp.addEventListener('input', e => {
+          data[i][f.k] = e.target.value;
+          persist();
+          renderSql();
+        });
+
+        wrap.appendChild(lab);
+        wrap.appendChild(inp);
+        row.appendChild(wrap);
+      });
+
+      host.appendChild(row);
+    });
+
+    renderSql();
+  }
+
+  function persist() {
+    try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) { /* modo privado */ }
+  }
+
+  function renderSql() {
+    const out = document.getElementById('sql');
+    const valid = data.filter(d => d.nome.trim() && num(d.peso) > 0);
+
+    if (!valid.length) {
+      out.textContent = 'Preencha ao menos um produto acima, com nome e peso unitário.';
+      return;
+    }
+
+    const lines = [];
+    lines.push('-- V007 - Produtos reais levantados na visita ao comerciante (P0).');
+    lines.push('-- Substitui os quatro produtos de exemplo do V005.');
+    lines.push('');
+    lines.push('UPDATE products SET active = FALSE');
+    lines.push('WHERE store_id = ' + sqlText(STORE_UUID) + " AND sku LIKE '%-%' AND sku IN ('ARZ-1KG','FJO-1KG','LTE-1L','CAF-500');");
+    lines.push('');
+    lines.push('INSERT INTO products (store_id, name, sku, unit_weight_g, tolerance_g, unit_price_cents)');
+    lines.push('VALUES');
+
+    const values = valid.map(d => {
+      const peso = num(d.peso);
+      const tol = Math.max(5, Math.round(peso * 0.015 * 10) / 10);
+      const preco = num(d.preco);
+      const cents = preco === null ? 'NULL' : String(Math.round(preco * 100));
+      const sku = d.sku.trim() ? sqlText(d.sku.trim()) : 'NULL';
+      return '    (' + sqlText(STORE_UUID) + ', ' + sqlText(d.nome.trim()) + ', ' + sku
+        + ', ' + peso + ', ' + tol + ', ' + cents + ')';
+    });
+    lines.push(values.join(',\n'));
+    lines.push('ON CONFLICT (store_id, sku) DO NOTHING;');
+
+    const comTara = valid.filter(d => num(d.tara) !== null || num(d.min) !== null);
+    if (comTara.length) {
+      lines.push('');
+      lines.push('-- Tara medida e estoque mínimo combinados na loja.');
+      lines.push('-- Ajuste o device_id para o ESP32 instalado em cada prateleira.');
+      comTara.forEach(d => {
+        const sets = [];
+        if (num(d.tara) !== null) sets.push('tare_g = ' + num(d.tara));
+        if (num(d.min) !== null) sets.push('min_qty = ' + num(d.min));
+        sets.push('product_id = (SELECT id FROM products WHERE store_id = ' + sqlText(STORE_UUID)
+          + ' AND name = ' + sqlText(d.nome.trim()) + ' LIMIT 1)');
+        lines.push('-- ' + d.nome.trim());
+        lines.push('-- UPDATE shelf_slots SET ' + sets.join(', ') + " WHERE device_id = '<uuid-do-esp32>';");
+      });
+    }
+
+    const faltas = valid.filter(d => num(d.falta) !== null);
+    if (faltas.length) {
+      lines.push('');
+      lines.push('-- Frequência de ruptura relatada pelo comerciante (para o P5, não vai ao banco):');
+      faltas.forEach(d => {
+        lines.push('--   ' + d.nome.trim() + ': ' + num(d.falta) + 'x por semana');
+      });
+    }
+
+    out.textContent = lines.join('\n');
+  }
+
+  document.getElementById('add').addEventListener('click', () => {
+    data.push(blank());
+    persist();
+    render();
+  });
+
+  document.getElementById('copy').addEventListener('click', async () => {
+    const msg = document.getElementById('copied');
+    try {
+      await navigator.clipboard.writeText(document.getElementById('sql').textContent);
+      msg.textContent = 'copiado';
+    } catch (e) {
+      msg.textContent = 'selecione o texto e copie à mão';
+    }
+    setTimeout(() => { msg.textContent = ''; }, 2600);
+  });
+
+  document.querySelectorAll('.checks input[type="checkbox"]').forEach(box => {
+    const k = KEY + ':' + box.id;
+    try { box.checked = localStorage.getItem(k) === '1'; } catch (e) { /* modo privado */ }
+    box.addEventListener('change', () => {
+      try { localStorage.setItem(k, box.checked ? '1' : '0'); } catch (e) { /* modo privado */ }
+    });
+  });
+
+  render();
+</script>
