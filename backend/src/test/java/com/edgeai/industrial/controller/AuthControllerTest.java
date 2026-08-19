@@ -60,7 +60,7 @@ class AuthControllerTest {
         Authentication auth = mock(Authentication.class);
         when(auth.getName()).thenReturn("admin@edgeai.local");
         when(authenticationManager.authenticate(any())).thenReturn(auth);
-        when(jwtService.generateToken("admin@edgeai.local")).thenReturn("mock-jwt-token");
+        when(jwtService.generateToken("admin@edgeai.local", null)).thenReturn("mock-jwt-token");
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

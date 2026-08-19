@@ -35,6 +35,9 @@ public class Device {
     @Column(length = 20)
     private String status = "inactive";
 
+    @Column(name = "store_id")
+    private UUID storeId;
+
     @Column(name = "last_seen_at")
     private OffsetDateTime lastSeenAt;
 

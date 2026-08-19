@@ -2,7 +2,6 @@ package com.edgeai.industrial.repository;
 
 import com.edgeai.industrial.dto.PickEventDto;
 import com.edgeai.industrial.dto.ProductDemandDto;
-import com.edgeai.industrial.dto.SensorPayloadDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -20,45 +19,50 @@ public class PickEventRepository {
 
     private final JdbcTemplate jdbc;
 
-    public void save(UUID deviceId, OffsetDateTime time, SensorPayloadDto.PickEvent pick) {
+    public void saveDerived(UUID deviceId, OffsetDateTime time, UUID storeId, UUID productId,
+                            String productName, int quantity, double weightDeltaKg, double confidence) {
         jdbc.update("""
                 INSERT INTO pick_events
-                    (time, device_id, product_name, quantity, weight_delta_kg, confidence)
-                VALUES (?, ?, ?, ?, ?, ?)
+                    (time, device_id, store_id, product_id, product_name, quantity, weight_delta_kg, confidence)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 Timestamp.from(time.toInstant()),
                 deviceId,
-                pick.getProductName(),
-                pick.getQuantity(),
-                pick.getWeightDeltaKg(),
-                pick.getConfidence());
+                storeId,
+                productId,
+                productName,
+                quantity,
+                weightDeltaKg,
+                confidence);
     }
 
-    public List<PickEventDto> findRecent(int hours, int limit) {
+    public List<PickEventDto> findRecent(UUID storeId, int hours, int limit) {
         return jdbc.query("""
                 SELECT pe.time, pe.device_id, d.name AS device_name,
                        pe.product_name, pe.quantity, pe.weight_delta_kg, pe.confidence
                 FROM pick_events pe
                 JOIN devices d ON d.id = pe.device_id
-                WHERE pe.time >= NOW() - (? * INTERVAL '1 hour')
+                WHERE pe.store_id = ?
+                  AND pe.time >= NOW() - (? * INTERVAL '1 hour')
                 ORDER BY pe.time DESC
                 LIMIT ?
                 """,
-                pickEventRowMapper(), hours, limit);
+                pickEventRowMapper(), storeId, hours, limit);
     }
 
-    public List<ProductDemandDto> findDemandAggregate(int hours) {
+    public List<ProductDemandDto> findDemandAggregate(UUID storeId, int hours) {
         return jdbc.query("""
                 SELECT product_name,
                        COUNT(*)       AS total_picks,
                        SUM(quantity)  AS total_quantity,
                        MAX(time)      AS last_pick
                 FROM pick_events
-                WHERE time >= NOW() - (? * INTERVAL '1 hour')
+                WHERE store_id = ?
+                  AND time >= NOW() - (? * INTERVAL '1 hour')
                 GROUP BY product_name
                 ORDER BY total_picks DESC
                 """,
-                demandRowMapper(), hours);
+                demandRowMapper(), storeId, hours);
     }
 
     private RowMapper<PickEventDto> pickEventRowMapper() {

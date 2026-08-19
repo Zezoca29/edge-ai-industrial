@@ -17,7 +17,7 @@ import java.util.UUID;
 public class SensorService {
 
     private final SensorDataRepository sensorDataRepository;
-    private final PickService pickService;
+    private final ShelfService shelfService;
 
     public void saveSensorPayload(Device device, SensorPayloadDto payload) {
         OffsetDateTime time = payload.getTimestamp().atOffset(ZoneOffset.UTC);
@@ -42,26 +42,27 @@ public class SensorService {
             sensorDataRepository.insert(time, device.getId(), device.getName(),
                     "weight", s.getWeight().getValue(), s.getWeight().getUnit(),
                     classification, anomalyScore);
+
+            double weightG = ShelfCalculator.toGrams(s.getWeight().getValue(), s.getWeight().getUnit());
+            boolean stable = !Boolean.FALSE.equals(s.getWeightStable());
+            shelfService.processWeight(device.getId(), time, weightG, stable);
         }
-
-        if (payload.getPickEvent() != null && payload.getPickEvent().isDetected()) {
-            pickService.savePickEvent(device.getId(), time, payload.getPickEvent());
-        }
     }
 
-    public List<SensorReadingDto> getReadings(UUID deviceId, OffsetDateTime from, OffsetDateTime to) {
-        return sensorDataRepository.findByDeviceAndTimeRange(deviceId, from, to);
+    public List<SensorReadingDto> getReadings(UUID deviceId, UUID storeId,
+                                              OffsetDateTime from, OffsetDateTime to) {
+        return sensorDataRepository.findByDeviceAndTimeRange(deviceId, storeId, from, to);
     }
 
-    public List<SensorReadingDto> getLatestPerDevice() {
-        return sensorDataRepository.findLatestPerDevice();
+    public List<SensorReadingDto> getLatestPerDevice(UUID storeId) {
+        return sensorDataRepository.findLatestPerDevice(storeId);
     }
 
-    public List<SensorReadingDto> getRecentReadings(int minutes) {
-        return sensorDataRepository.findRecent(minutes, 1500);
+    public List<SensorReadingDto> getRecentReadings(UUID storeId, int minutes) {
+        return sensorDataRepository.findRecent(storeId, minutes, 1500);
     }
 
-    public List<SensorReadingDto> getAnomalies() {
-        return sensorDataRepository.findAnomalies(100);
+    public List<SensorReadingDto> getAnomalies(UUID storeId) {
+        return sensorDataRepository.findAnomalies(storeId, 100);
     }
 }

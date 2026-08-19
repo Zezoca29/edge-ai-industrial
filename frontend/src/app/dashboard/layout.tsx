@@ -17,6 +17,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <Link href="/dashboard/picks" className="text-sm text-gray-300 hover:text-white py-1">
           Retiradas
         </Link>
+        <Link href="/dashboard/settings" className="text-sm text-gray-300 hover:text-white py-1">
+          Configuração
+        </Link>
       </nav>
       <main className="flex-1 p-6">{children}</main>
     </div>

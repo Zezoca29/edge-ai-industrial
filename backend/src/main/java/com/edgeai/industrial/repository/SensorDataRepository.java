@@ -29,7 +29,12 @@ public class SensorDataRepository {
                 value, unit, classification, anomalyScore);
     }
 
+    /**
+     * The device id comes straight from the query string, so ownership is enforced
+     * by the join: a device of another store simply matches no rows.
+     */
     public List<SensorReadingDto> findByDeviceAndTimeRange(UUID deviceId,
+                                                           UUID storeId,
                                                            OffsetDateTime from,
                                                            OffsetDateTime to) {
         return jdbc.query("""
@@ -39,17 +44,19 @@ public class SensorDataRepository {
                 FROM sensor_data sd
                 JOIN devices d ON d.id = sd.device_id
                 WHERE sd.device_id = ?
+                  AND d.store_id = ?
                   AND sd.time BETWEEN ? AND ?
                 ORDER BY sd.time DESC
                 LIMIT 500
                 """,
                 rowMapper(),
                 deviceId,
+                storeId,
                 Timestamp.from(from.toInstant()),
                 Timestamp.from(to.toInstant()));
     }
 
-    public List<SensorReadingDto> findLatestPerDevice() {
+    public List<SensorReadingDto> findLatestPerDevice(UUID storeId) {
         return jdbc.query("""
                 SELECT DISTINCT ON (sd.device_id)
                     sd.time, sd.device_id, d.name AS device_name,
@@ -57,37 +64,40 @@ public class SensorDataRepository {
                     sd.classification, sd.anomaly_score
                 FROM sensor_data sd
                 JOIN devices d ON d.id = sd.device_id
+                WHERE d.store_id = ?
                 ORDER BY sd.device_id, sd.time DESC
                 """,
-                rowMapper());
+                rowMapper(), storeId);
     }
 
-    public List<SensorReadingDto> findRecent(int minutes, int limit) {
+    public List<SensorReadingDto> findRecent(UUID storeId, int minutes, int limit) {
         return jdbc.query("""
                 SELECT sd.time, sd.device_id, d.name AS device_name,
                        sd.sensor_type, sd.value, sd.unit,
                        sd.classification, sd.anomaly_score
                 FROM sensor_data sd
                 JOIN devices d ON d.id = sd.device_id
-                WHERE sd.time >= NOW() - (? * INTERVAL '1 minute')
+                WHERE d.store_id = ?
+                  AND sd.time >= NOW() - (? * INTERVAL '1 minute')
                 ORDER BY sd.time ASC
                 LIMIT ?
                 """,
-                rowMapper(), minutes, limit);
+                rowMapper(), storeId, minutes, limit);
     }
 
-    public List<SensorReadingDto> findAnomalies(int limit) {
+    public List<SensorReadingDto> findAnomalies(UUID storeId, int limit) {
         return jdbc.query("""
                 SELECT sd.time, sd.device_id, d.name AS device_name,
                        sd.sensor_type, sd.value, sd.unit,
                        sd.classification, sd.anomaly_score
                 FROM sensor_data sd
                 JOIN devices d ON d.id = sd.device_id
-                WHERE sd.classification = 'anomaly'
+                WHERE d.store_id = ?
+                  AND sd.classification = 'anomaly'
                 ORDER BY sd.time DESC
                 LIMIT ?
                 """,
-                rowMapper(), limit);
+                rowMapper(), storeId, limit);
     }
 
     private RowMapper<SensorReadingDto> rowMapper() {

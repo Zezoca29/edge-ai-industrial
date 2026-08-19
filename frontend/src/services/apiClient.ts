@@ -1,5 +1,14 @@
 const BASE_URL = '/api';
 
+export class ApiError extends Error {
+  status: number;
+
+  constructor(status: number) {
+    super(`API error: ${status}`);
+    this.status = status;
+  }
+}
+
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem('jwt_token');
@@ -22,7 +31,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     window.location.href = '/login';
     throw new Error('Unauthorized');
   }
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  if (!res.ok) throw new ApiError(res.status);
   return res.json();
 }
 
@@ -39,9 +48,30 @@ export const apiClient = {
     request<import('@/types').PickEvent[]>(`/picks/recent?hours=${hours}`),
   getProductDemand: (hours = 168) =>
     request<import('@/types').ProductDemand[]>(`/picks/demand?hours=${hours}`),
+  pingDevice: (name: string) =>
+    request<void>(`/devices/${encodeURIComponent(name)}/ping`, { method: 'POST' }),
   login: (email: string, password: string) =>
     request<{ token: string }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     }),
+  getProducts: () => request<import('@/types').Product[]>('/products'),
+  createProduct: (body: Omit<import('@/types').Product, 'id'>) =>
+    request<import('@/types').Product>('/products', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  updateProduct: (id: string, body: Omit<import('@/types').Product, 'id'>) =>
+    request<import('@/types').Product>(`/products/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    }),
+  getShelfSlots: () => request<import('@/types').ShelfSlot[]>('/shelf-slots'),
+  updateShelfSlot: (id: string, body: { productId: string | null; minQty: number }) =>
+    request<import('@/types').ShelfSlot>(`/shelf-slots/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    }),
+  tareShelfSlot: (id: string) =>
+    request<import('@/types').ShelfSlot>(`/shelf-slots/${id}/tare`, { method: 'POST' }),
 };

@@ -25,6 +25,9 @@ public class SensorPayloadDto {
         private SensorValue vibration;
         private SensorValue current;
         private SensorValue weight;
+
+        @JsonProperty("weight_stable")
+        private Boolean weightStable;
     }
 
     @Data

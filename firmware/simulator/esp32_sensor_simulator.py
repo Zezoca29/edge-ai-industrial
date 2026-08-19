@@ -38,12 +38,15 @@ class SensorSnapshot:
     current: float
     classification: str
     anomaly_score: float
+    weight_kg: float
+    weight_stable: bool
 
 
 class SyntheticSensorEngine:
     def __init__(self, anomaly_chance: float, seed: int | None = None) -> None:
         self._rng = random.Random(seed)
         self._anomaly_chance = anomaly_chance
+        self._weight_kg = 8.2
 
     def _baseline(self, step: int) -> tuple[float, float, float]:
         wave = math.sin(step / 10.0)
@@ -70,12 +73,19 @@ class SyntheticSensorEngine:
         anomaly_score = min(1.0, (sum(anomaly_components) / len(anomaly_components)) + (0.35 if injected_anomaly else 0.0))
         classification = "anomaly" if anomaly_score >= 0.65 else "normal"
 
+        previous = self._weight_kg
+        if step % 6 == 0 and self._weight_kg > 1.0:
+            self._weight_kg -= 1.0          # uma unidade de 1kg saiu da prateleira
+        weight_stable = abs(self._weight_kg - previous) < 0.001
+
         return SensorSnapshot(
             temperature=round(temperature, 3),
             vibration=round(vibration, 3),
             current=round(current, 3),
             classification=classification,
             anomaly_score=round(anomaly_score, 3),
+            weight_kg=round(self._weight_kg, 3),
+            weight_stable=weight_stable,
         )
 
 
@@ -120,6 +130,8 @@ class Esp32Simulator:
                 "temperature": {"value": snapshot.temperature, "unit": "C"},
                 "vibration": {"value": snapshot.vibration, "unit": "mm_s"},
                 "current": {"value": snapshot.current, "unit": "A"},
+                "weight": {"value": snapshot.weight_kg, "unit": "kg"},
+                "weight_stable": snapshot.weight_stable,
             },
             "inference": {
                 "classification": snapshot.classification,
