@@ -38,17 +38,56 @@ O piloto instrumenta uma **bandeja de ~30×40 cm** apoiada sobre a prateleira, o
 
 ## Lista de compras
 
-| Item | Especificação | Por que exatamente isto |
-|---|---|---|
-| Célula de carga | *Single point*, **50 kg**, barra de alumínio, 4 fios | 25 kg de produto + bandeja + margem. Uma de 5 ou 10 kg — a mais comum nos kits — satura e pode se deformar permanentemente |
-| Amplificador | Módulo **HX711** (24 bits) | Padrão para célula de 4 fios; a resolução sobra para degraus de 5 kg |
-| Bandeja | Chapa rígida ~30×40 cm (MDF 15 mm ou acrílico 5 mm) | Precisa ser rígida: bandeja que flexiona transfere carga para o apoio e falseia a leitura |
-| Base | Segunda chapa igual, ou fixação direta na prateleira | A célula vai *entre* as duas, uma ponta em cada |
-| Parafusos e espaçadores | M4 ou M5, conforme a rosca da célula | A célula precisa de folga para fletir; encostada nos dois lados ela não mede |
-| ESP32 | DevKit v1 (já em mãos) | — |
-| Alimentação | Fonte 5 V + cabo USB longo | Um cabo só, conforme a restrição do comerciante |
+**Correcao de 2026-08-19, apos pesquisa de mercado.** A versao anterior desta lista
+pedia uma celula *single point* de barra de 50 kg. Isso estava errado para este
+projeto. O que as lojas de eletronica vendem como "celula de carga 50 kg" e um bloco
+de 34x34x7 mm com **tres fios**, meia-ponte, do tipo balanca de banheiro, projetado
+para trabalhar **em conjunto de quatro**. Barra single point de 50 kg existe, mas e
+peca de fornecedor de balanca industrial, vendida sob orcamento.
 
-**Não comprar agora:** as outras três células e HX711. Só fazem sentido se o piloto for aprovado, e aí a compra vem junto da decisão multi-slot.
+A correcao melhora o projeto. O risco que motivou a barra era carga descentralizada
+numa bandeja grande; quatro celulas nos cantos resolvem exatamente isso, que e como
+uma balanca de banheiro funciona.
+
+| Item | Qtd | Preco confirmado | Observacao |
+|---|---|---|---|
+| Celula de carga 50 kg, meia-ponte, 3 fios | 4 | R$ 7,30 a R$ 11,90 cada | Vao nos quatro cantos da bandeja, ligadas em ponte completa |
+| Modulo HX711 (24 bits) | 1 | ~R$ 5,90 | Ha kits com as 4 celulas e o modulo juntos |
+| Bandeja | 1 | — | Chapa rigida ~30x40 cm, MDF 15 mm ou acrilico 5 mm. Bandeja que flexiona falseia a leitura |
+| Base | 1 | — | Segunda chapa igual, ou fixacao direta na prateleira |
+| Parafusos e espacadores | — | — | M4/M5 conforme a rosca. As celulas precisam de folga para fletir |
+| ESP32 DevKit v1 | 1 | ja em maos | — |
+| Fonte 5 V + cabo USB longo | 1 | — | Um cabo so, conforme a restricao do comerciante |
+
+**Sensoriamento: cerca de R$ 40 a R$ 60.** Piloto completo com bandeja, fixacao e
+fonte: aproximadamente **R$ 90 a R$ 140**.
+
+Precos verificados em 2026-08-19 na Curto Circuito, Recicomp, Fabrica de Bolso,
+Mekanus e Fulltronic. Confira antes de comprar; variam por vendedor e promocao.
+
+**Nao comprar agora:** nada alem disto. As celulas para as outras tres prateleiras
+so fazem sentido se o piloto for aprovado, e ai a compra vem junto da decisao de
+multi-slot.
+
+---
+
+## A tolerancia no banco precisa mudar por causa desta escolha
+
+As celulas baratas especificam erro de **0,2% do fundo de escala**. Quatro de 50 kg
+formam uma plataforma de 200 kg, portanto o erro absoluto e de cerca de **+/- 400 g**.
+
+O `tolerance_g` semeado para o arroz no `V007` e **75 g**. Com 400 g de erro real,
+toda leitura cairia fora da tolerancia e seria marcada como `suspect` — e o P3
+suprime alertas em leitura suspeita, justamente para nao anunciar "restam 0 unidades"
+quando alguem levanta a bandeja. O resultado seria um sistema silencioso, cujo sintoma
+("nunca chega notificacao") e dos mais dificeis de diagnosticar.
+
+Detectar o degrau de 5 kg continua trivial: 400 g de erro contra 5.000 g de passo,
+com zona morta de 0,6 unidade. O que muda e so a tolerancia.
+
+**Ao calibrar a bancada, ajustar `products.tolerance_g` do arroz para algo entre 400
+e 600 g**, medindo a dispersao real em vez de adotar o numero nominal. O mesmo vale
+para os demais produtos se forem instrumentados depois.
 
 ---
 
