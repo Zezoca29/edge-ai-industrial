@@ -74,4 +74,14 @@ export const apiClient = {
     }),
   tareShelfSlot: (id: string) =>
     request<import('@/types').ShelfSlot>(`/shelf-slots/${id}/tare`, { method: 'POST' }),
+  getAlerts: (onlyOpen = true) =>
+    request<import('@/types').Alert[]>(`/alerts?onlyOpen=${onlyOpen}`),
+  getAlertCount: () => request<{ open: number }>('/alerts/count'),
+  acknowledgeAlert: (id: string) =>
+    request<void>(`/alerts/${id}/acknowledge`, { method: 'POST' }),
+  getPushPublicKey: () => request<{ publicKey: string }>('/push/public-key'),
+  subscribePush: (body: { endpoint: string; p256dh: string; auth: string }) =>
+    request<void>('/push/subscriptions', { method: 'POST', body: JSON.stringify(body) }),
+  unsubscribePush: (endpoint: string) =>
+    request<void>(`/push/subscriptions?endpoint=${encodeURIComponent(endpoint)}`, { method: 'DELETE' }),
 };

@@ -52,6 +52,16 @@ export interface Product {
   active: boolean;
 }
 
+export interface Alert {
+  id: string;
+  alertType: 'stock_low' | 'device_silent';
+  severity: 'high' | 'medium';
+  message: string;
+  acknowledged: boolean;
+  createdAt: string;
+  resolvedAt: string | null;
+}
+
 export interface ShelfSlot {
   id: string;
   deviceId: string;
