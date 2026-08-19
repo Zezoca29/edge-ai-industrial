@@ -2,6 +2,8 @@ package com.edgeai.industrial.service;
 
 import com.edgeai.industrial.domain.PushSubscription;
 import com.edgeai.industrial.repository.PushSubscriptionRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import nl.martijndwars.webpush.Notification;
 import nl.martijndwars.webpush.PushService;
@@ -28,15 +30,18 @@ import java.util.List;
 public class PushSender {
 
     private final PushSubscriptionRepository subscriptionRepository;
+    private final ObjectMapper objectMapper;
     private final String publicKey;
     private final String privateKey;
     private final String subject;
 
     public PushSender(PushSubscriptionRepository subscriptionRepository,
+                      ObjectMapper objectMapper,
                       @Value("${push.vapid.public-key:}") String publicKey,
                       @Value("${push.vapid.private-key:}") String privateKey,
                       @Value("${push.vapid.subject:mailto:admin@edgeai.local}") String subject) {
         this.subscriptionRepository = subscriptionRepository;
+        this.objectMapper = objectMapper;
         this.publicKey = publicKey;
         this.privateKey = privateKey;
         this.subject = subject;
@@ -56,9 +61,16 @@ public class PushSender {
             return;
         }
 
-        String payload = String.format(
-                "{\"title\":\"%s\",\"body\":\"%s\",\"url\":\"/dashboard/alerts\"}",
-                escape(event.title()), escape(event.body()));
+        String payload;
+        try {
+            payload = objectMapper.writeValueAsString(
+                    new PushPayload(event.title(), event.body(), "/dashboard/alerts"));
+        } catch (JsonProcessingException e) {
+            // A malformed payload can never reach the browser as JSON, so there is
+            // nothing to send — but the alert itself is already committed and safe.
+            log.warn("Failed to serialize push payload for alert {}: {}", event.alertId(), e.getMessage());
+            return;
+        }
 
         for (PushSubscription subscription : subscriptions) {
             int status = deliver(subscription, payload);
@@ -96,7 +108,7 @@ public class PushSender {
         }
     }
 
-    private static String escape(String s) {
-        return s.replace("\\", "\\\\").replace("\"", "\\\"");
+    /** Serialized with Jackson so no raw control character can ever produce malformed JSON. */
+    private record PushPayload(String title, String body, String url) {
     }
 }

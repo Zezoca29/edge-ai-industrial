@@ -2,6 +2,8 @@ package com.edgeai.industrial.service;
 
 import com.edgeai.industrial.domain.PushSubscription;
 import com.edgeai.industrial.repository.PushSubscriptionRepository;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -20,11 +23,16 @@ class PushSenderTest {
 
     @Mock private PushSubscriptionRepository subscriptionRepository;
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    /** Last payload handed to {@code deliver} by the sender under test. */
+    private final AtomicReference<String> capturedPayload = new AtomicReference<>();
+
     private UUID storeId;
 
     @BeforeEach
     void setUp() {
         storeId = UUID.randomUUID();
+        capturedPayload.set(null);
     }
 
     private PushSubscription subscription() {
@@ -39,11 +47,12 @@ class PushSenderTest {
         return s;
     }
 
-    /** Subclasse de teste: troca a entrega HTTP real por um codigo fixo. */
+    /** Subclasse de teste: troca a entrega HTTP real por um codigo fixo, capturando o payload. */
     private PushSender senderReturning(int status) {
-        return new PushSender(subscriptionRepository, "", "", "mailto:teste@edgeai.local") {
+        return new PushSender(subscriptionRepository, objectMapper, "", "", "mailto:teste@edgeai.local") {
             @Override
             protected int deliver(PushSubscription subscription, String payloadJson) {
+                capturedPayload.set(payloadJson);
                 return status;
             }
         };
@@ -107,5 +116,27 @@ class PushSenderTest {
 
         assertDoesNotThrow(() -> senderReturning(201).onAlertOpened(
                 new AlertOpenedEvent(UUID.randomUUID(), storeId, "Estoque baixo", "Arroz: restam 4")));
+    }
+
+    /**
+     * A product name typed by the shopkeeper flows unfiltered into the alert
+     * body. Neither a quote nor a raw newline in it may break the payload —
+     * a hand-rolled escaper missed the newline case entirely.
+     */
+    @Test
+    void aBodyWithQuotesAndNewlinesStillProducesValidJson() throws Exception {
+        PushSubscription sub = subscription();
+        when(subscriptionRepository.findByStoreId(storeId)).thenReturn(List.of(sub));
+
+        String trickyBody = "Arroz \"tipo 1\": restam 4\nreponha ate amanha";
+
+        senderReturning(201).onAlertOpened(
+                new AlertOpenedEvent(UUID.randomUUID(), storeId, "Estoque baixo", trickyBody));
+
+        String payload = capturedPayload.get();
+        assertNotNull(payload, "deliver should have been called with a payload");
+
+        JsonNode node = objectMapper.readTree(payload);
+        assertEquals(trickyBody, node.get("body").asText());
     }
 }
