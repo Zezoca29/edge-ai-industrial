@@ -95,11 +95,37 @@ describe('deriveStatus', () => {
     ).toBe('off');
   });
 
-  it('um alerta device_silent aberto derruba a bancada para offline', () => {
+  it('telemetria fresca vence um device_silent que ainda não foi varrido', () => {
+    // A varredura de silêncio do backend roda a cada minuto: um dispositivo
+    // que acabou de voltar carrega o alerta velho por até um minuto. Marcá-lo
+    // offline nesse intervalo é factualmente errado.
     const status = deriveStatus({
       device: device(),
       slot: slot(),
       alerts: [alert({ alertType: 'device_silent', severity: 'medium' })],
+      now: NOW,
+    });
+    expect(status).toBe('ok');
+  });
+
+  it('um device_silent velho não pode esconder uma prateleira vazia', () => {
+    // O caso que apareceu rodando ao vivo: publiquei 0 kg, o slot zerou, e o
+    // alerta de silêncio ainda aberto pintava a bancada de offline — deixando
+    // invisível a única coisa que exigia ação.
+    const status = deriveStatus({
+      device: device(),
+      slot: slot({ currentQty: 0 }),
+      alerts: [alert({ alertType: 'device_silent', severity: 'medium' })],
+      now: NOW,
+    });
+    expect(status).toBe('crit');
+  });
+
+  it('mas um dispositivo realmente mudo continua offline, alerta ou não', () => {
+    const status = deriveStatus({
+      device: device({ lastSeenAt: stale }),
+      slot: slot({ currentQty: 0 }),
+      alerts: [],
       now: NOW,
     });
     expect(status).toBe('off');

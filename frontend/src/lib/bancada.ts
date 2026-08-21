@@ -82,7 +82,15 @@ export interface StatusInput {
 export function deriveStatus({ device, slot, alerts, now }: StatusInput): BancadaStatus {
   const open = alerts.filter(isOpen);
 
-  if (isSilent(device, now) || open.some((a) => a.alertType === 'device_silent')) {
+  // Só `lastSeenAt` decide se a bancada está muda — um `device_silent` aberto
+  // não. O alerta é a opinião do backend sobre o mesmo fato, e ela chega
+  // atrasada: a varredura de silêncio roda a cada minuto, então um alerta
+  // ainda não resolvido continua de pé por até um minuto depois de o
+  // dispositivo voltar a publicar. Deixar esse alerta mandar significa
+  // escrever "offline" sobre um dispositivo que falou meio segundo atrás — e,
+  // pior, esconder atrás disso uma prateleira vazia. O alerta continua na
+  // lista de alertas, que é o registro; o estado é o agora.
+  if (isSilent(device, now)) {
     return 'off';
   }
   if (slot && slot.currentQty === 0) {
