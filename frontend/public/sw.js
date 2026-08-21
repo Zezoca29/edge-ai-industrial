@@ -28,7 +28,7 @@ self.addEventListener('fetch', (event) => {
 });
 
 self.addEventListener('push', (event) => {
-  let data = { title: 'Gôndola', body: 'Novo alerta', url: '/dashboard/alerts' };
+  let data = { title: 'Gôndola', body: 'Novo alerta', url: '/dashboard/alertas' };
   try {
     if (event.data) data = { ...data, ...event.data.json() };
   } catch (e) {
@@ -47,7 +47,7 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || '/dashboard/alerts';
+  const url = (event.notification.data && event.notification.data.url) || '/dashboard/alertas';
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
       for (const client of list) {

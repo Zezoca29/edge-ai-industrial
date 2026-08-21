@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { Plus } from '@phosphor-icons/react';
+import { muted } from '@/components/ui/primitives';
 
 interface Props {
   onCreate: (body: {
@@ -42,7 +44,8 @@ export function ProductForm({ onCreate }: Props) {
 
     const weight = Number(unitWeightG);
     if (!name.trim()) return setError('Informe o nome do produto.');
-    if (!Number.isFinite(weight) || weight <= 0) return setError('Peso unitário deve ser maior que zero.');
+    if (!Number.isFinite(weight) || weight <= 0)
+      return setError('Peso unitário deve ser maior que zero.');
 
     const tolerance = toleranceG.trim() === '' ? defaultToleranceG(weight) : Number(toleranceG);
     if (!Number.isFinite(tolerance) || tolerance <= 0) {
@@ -67,8 +70,12 @@ export function ProductForm({ onCreate }: Props) {
         unitPriceCents: priceReais ? Math.round(Number(priceReais) * 100) : null,
         active: true,
       });
-      setName(''); setSku(''); setUnitWeightG(''); setToleranceG('');
-      setMinQty(''); setPriceReais('');
+      setName('');
+      setSku('');
+      setUnitWeightG('');
+      setToleranceG('');
+      setMinQty('');
+      setPriceReais('');
     } catch {
       setError('Não foi possível salvar o produto. Verifique se o SKU já não está em uso.');
     } finally {
@@ -77,59 +84,89 @@ export function ProductForm({ onCreate }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-wrap gap-3 items-end">
-      <div className="flex flex-col gap-1">
-        <label htmlFor="product-name" className="text-xs text-gray-400">Nome</label>
-        <input id="product-name" value={name} onChange={(e) => setName(e.target.value)}
-          className="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm text-white" />
+    <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3">
+      <div className="field min-w-[160px] flex-1">
+        <label htmlFor="product-name">Nome</label>
+        <input
+          id="product-name"
+          className="input"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
       </div>
-      <div className="flex flex-col gap-1">
-        <label htmlFor="product-sku" className="text-xs text-gray-400">SKU</label>
-        <input id="product-sku" value={sku} onChange={(e) => setSku(e.target.value)}
-          className="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm text-white" />
+      <div className="field w-28">
+        <label htmlFor="product-sku">SKU</label>
+        <input
+          id="product-sku"
+          className="input"
+          value={sku}
+          onChange={(e) => setSku(e.target.value)}
+        />
       </div>
-      <div className="flex flex-col gap-1">
-        <label htmlFor="product-weight" className="text-xs text-gray-400">Peso unitário (g)</label>
-        <input id="product-weight" value={unitWeightG} onChange={(e) => setUnitWeightG(e.target.value)}
+      <div className="field w-36">
+        <label htmlFor="product-weight">Peso unitário (g)</label>
+        <input
+          id="product-weight"
+          className="input"
+          value={unitWeightG}
+          onChange={(e) => setUnitWeightG(e.target.value)}
           inputMode="decimal"
-          className="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm text-white" />
+        />
       </div>
-      <div className="flex flex-col gap-1">
-        <label htmlFor="product-tolerance" className="text-xs text-gray-400">
-          Tolerância (g) <span className="text-gray-500">— opcional</span>
+      <div className="field w-40">
+        <label htmlFor="product-tolerance">
+          Tolerância (g) <span style={{ color: muted(40) }}>— opcional</span>
         </label>
-        <input id="product-tolerance" value={toleranceG} onChange={(e) => setToleranceG(e.target.value)}
+        <input
+          id="product-tolerance"
+          className="input"
+          value={toleranceG}
+          onChange={(e) => setToleranceG(e.target.value)}
           inputMode="decimal"
           placeholder={String(suggestedTolerance)}
           aria-describedby="product-tolerance-help"
-          className="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm text-white" />
-        <span id="product-tolerance-help" className="text-xs text-gray-500">
+        />
+        <span id="product-tolerance-help" className="text-[11px]" style={{ color: muted(40) }}>
           Em branco usa {suggestedTolerance} g (1,5% do peso)
         </span>
       </div>
-      <div className="flex flex-col gap-1">
-        <label htmlFor="product-min-qty" className="text-xs text-gray-400">
-          Mínimo para repor <span className="text-gray-500">— opcional</span>
+      <div className="field w-36">
+        <label htmlFor="product-min-qty">
+          Mínimo para repor <span style={{ color: muted(40) }}>— opcional</span>
         </label>
-        <input id="product-min-qty" value={minQty} onChange={(e) => setMinQty(e.target.value)}
-          type="number" min={0} step={1}
+        <input
+          id="product-min-qty"
+          className="input"
+          value={minQty}
+          onChange={(e) => setMinQty(e.target.value)}
+          type="number"
+          min={0}
+          step={1}
           aria-describedby="product-min-qty-help"
-          className="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm text-white w-32" />
-        <span id="product-min-qty-help" className="text-xs text-gray-500">
-          Adotado pela prateleira ao vincular este produto
+        />
+        <span id="product-min-qty-help" className="text-[11px]" style={{ color: muted(40) }}>
+          Adotado pela prateleira ao vincular
         </span>
       </div>
-      <div className="flex flex-col gap-1">
-        <label htmlFor="product-price" className="text-xs text-gray-400">Preço (R$)</label>
-        <input id="product-price" value={priceReais} onChange={(e) => setPriceReais(e.target.value)}
+      <div className="field w-28">
+        <label htmlFor="product-price">Preço (R$)</label>
+        <input
+          id="product-price"
+          className="input"
+          value={priceReais}
+          onChange={(e) => setPriceReais(e.target.value)}
           inputMode="decimal"
-          className="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm text-white" />
+        />
       </div>
-      <button type="submit" disabled={saving}
-        className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm rounded px-3 py-1.5">
-        {saving ? 'Salvando...' : 'Adicionar produto'}
+      <button type="submit" disabled={saving} className="btn btn-primary">
+        <Plus size={15} />
+        {saving ? 'Salvando…' : 'Adicionar produto'}
       </button>
-      {error && <p role="alert" className="text-red-400 text-sm w-full">{error}</p>}
+      {error && (
+        <p role="alert" className="w-full text-sm" style={{ color: 'var(--color-crit)' }}>
+          {error}
+        </p>
+      )}
     </form>
   );
 }

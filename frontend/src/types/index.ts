@@ -57,6 +57,11 @@ export interface Product {
 
 export interface Alert {
   id: string;
+  /** O dispositivo que levantou o alerta. E como a tela arquiva o alerta
+   *  sob a bancada certa sem adivinhar pelo texto da mensagem. */
+  deviceId: string;
+  /** Null quando o dispositivo ja nao existe mais. */
+  deviceName: string | null;
   alertType: 'stock_low' | 'device_silent';
   severity: 'high' | 'medium';
   message: string;

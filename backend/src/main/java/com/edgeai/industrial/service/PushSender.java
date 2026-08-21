@@ -64,7 +64,7 @@ public class PushSender {
         String payload;
         try {
             payload = objectMapper.writeValueAsString(
-                    new PushPayload(event.title(), event.body(), "/dashboard/alerts"));
+                    new PushPayload(event.title(), event.body(), "/dashboard/alertas"));
         } catch (JsonProcessingException e) {
             // A malformed payload can never reach the browser as JSON, so there is
             // nothing to send — but the alert itself is already committed and safe.

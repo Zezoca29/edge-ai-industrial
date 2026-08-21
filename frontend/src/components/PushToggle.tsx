@@ -88,7 +88,7 @@ export function PushToggle() {
 
   if (state === 'unsupported') {
     return (
-      <p className="text-sm text-gray-400">
+      <p className="text-sm" style={{ color: 'color-mix(in srgb, var(--color-text) 50%, transparent)' }}>
         Este navegador não suporta notificações. Abra pelo Chrome no Android ou
         instale o app na tela de início do iPhone.
       </p>
@@ -97,7 +97,7 @@ export function PushToggle() {
 
   if (state === 'denied') {
     return (
-      <p className="text-sm text-yellow-400" role="alert">
+      <p className="text-sm" role="alert" style={{ color: 'var(--color-warn)' }}>
         As notificações foram bloqueadas neste aparelho. Para reativar, abra as
         configurações do navegador para este site e permita notificações.
       </p>
@@ -109,7 +109,7 @@ export function PushToggle() {
       {state === 'enabled' ? (
         <button
           onClick={disable}
-          className="bg-gray-700 hover:bg-gray-600 text-white text-sm rounded px-3 py-1.5"
+          className="btn btn-secondary"
         >
           Desativar alertas neste aparelho
         </button>
@@ -117,15 +117,15 @@ export function PushToggle() {
         <button
           onClick={enable}
           disabled={state === 'working'}
-          className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm rounded px-3 py-1.5"
+          className="btn btn-primary"
         >
           {state === 'working' ? 'Ativando...' : 'Ativar alertas neste aparelho'}
         </button>
       )}
       {state === 'enabled' && (
-        <span className="text-sm text-green-400">Alertas ativos</span>
+        <span className="text-sm" style={{ color: 'var(--color-ok)' }}>Alertas ativos</span>
       )}
-      {error && <p role="alert" className="text-red-400 text-sm w-full">{error}</p>}
+      {error && <p role="alert" className="w-full text-sm" style={{ color: 'var(--color-crit)' }}>{error}</p>}
     </div>
   );
 }

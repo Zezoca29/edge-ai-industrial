@@ -1,4 +1,58 @@
-# Handoff — sessão de 2026-08-21
+# Handoff
+
+## Sessao de 2026-08-21 (tarde) — refatoracao da tela
+
+**Feito: o dashboard foi refeito sobre o design "Bancadas Interativas"**
+(importado do Claude Design, design system *Nocturne*). O objetivo que a
+sessao anterior deixou marcado esta cumprido.
+
+### O que mudou
+
+| Camada | Mudanca |
+|---|---|
+| Design system | Tokens do Nocturne em `frontend/src/app/globals.css`; `tailwind.config.js` aponta para as CSS vars. Inter via `next/font`, icones `@phosphor-icons/react`. |
+| Navegacao | 4 secoes: `/dashboard`, `/dashboard/bancadas`, `/dashboard/alertas`, `/dashboard/ajustes`. Trilho lateral >=1024px, barra inferior abaixo — um componente, `NavShell`. |
+| Rotas removidas | `readings`, `anomalies`, `picks`, `settings`, `alerts` (a antiga). O conteudo foi absorvido pelo detalhe da bancada e por Ajustes. |
+| Modelo | `src/lib/bancada.ts` funde Device + ShelfSlot + Product + Alert num tipo `Bancada`, com `deriveStatus()` (ok/atencao/critico/offline). |
+| Peso | `src/lib/weight.ts` — espelho em TS do `ShelfCalculator` e do `sketch.ino`. |
+| Bancada interativa | `/dashboard/bancadas/[deviceId]/monitor` publica MQTT com o payload do `sketch.ino`. `src/services/benchPublisher.ts` + `benchSettings.ts` (broker editavel em Ajustes, salvo em localStorage). |
+| Testes | **vitest** entrou no frontend, so para a logica pura: 30 testes em `src/lib/*.test.ts`. `npm test`. |
+| Backend | `AlertDto` ganhou `deviceId` e `deviceName` (aditivo). Deep link do push virou `/dashboard/alertas`. |
+
+### Semantica de estado da bancada
+
+A ordem importa e esta em `deriveStatus()`:
+
+1. **Offline** vence tudo — sem sinal, qualquer numero na tela e leitura velha.
+2. **Critico** — prateleira vazia (`currentQty === 0`), venda perdida agora.
+3. **Atencao** — leitura suspeita, estoque no minimo, ou `stock_low` aberto.
+4. **Operacional** — o resto.
+
+Note que `stock_low` chega do backend com severity `high`, mas na gondola
+isso e atencao, nao crise. A cor da tela nao e a severity do alerta.
+
+### Provado ao vivo nesta sessao
+
+Publiquei 25 → 20 → 10 kg no topico `sensor/data/wokwi-shelf-001` com o payload
+exato que o `benchPublisher` monta. O slot foi de `qty=1 / 6500 g / suspect=true`
+para `qty=2 / 10000 g / suspect=false`. Navegador → EMQX → backend → Kafka →
+prateleira → REST → tela. Suite do backend verde; frontend com lint, tsc, build
+e 30 testes verdes.
+
+**Atencao para a demo:** o container `edgeai-kafka` esta com o group coordinator
+instavel (`NOT_COORDINATOR` em loop no log), o que atrasa a ingestao em ~40 s.
+Nao e do codigo. Um `docker compose restart kafka` deve resolver antes de
+apresentar.
+
+### Cadencia de polling
+
+`useBancadas` separa dois niveis: dispositivo e prateleira no intervalo pedido
+(2 s no monitor), produto/alerta/retirada no minimo de 10 s. Puxar os cinco a
+2 s seriam 150 requisicoes por minuto para atualizar dois numeros.
+
+---
+
+## Sessao de 2026-08-21 (manha) — backend, bancada Wokwi
 
 Registro do que foi feito para retomar noutro chat. **Objetivo do próximo chat:
 refatorar completamente a tela do Edge AI (frontend/dashboard).** A última seção
