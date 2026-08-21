@@ -48,6 +48,9 @@ export interface Product {
   sku: string | null;
   unitWeightG: number;
   toleranceG: number;
+  /** Minimo de reposicao combinado na loja. Um slot adota este numero ao
+   *  vincular o produto. `null` = sem numero combinado. */
+  defaultMinQty: number | null;
   unitPriceCents: number | null;
   active: boolean;
 }

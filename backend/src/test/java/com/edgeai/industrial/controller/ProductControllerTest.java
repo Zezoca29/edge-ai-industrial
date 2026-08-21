@@ -70,6 +70,31 @@ class ProductControllerTest {
     }
 
     @Test
+    void createAndReadBackCarryTheReplenishmentMinimum() {
+        // O minimo combinado na loja e propriedade do produto (V009), e o slot
+        // o adota no vinculo. Sem sair na API o lojista nao tem como informar
+        // nem revisar esse numero: ele so existia no seed da migracao.
+        when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ProductDto body = new ProductDto(null, "Arroz 5 kg", "ARZ001", 5000.0, 500.0, 5, 2990, true);
+        ProductDto result = productController.create(body);
+
+        assertEquals(5, result.defaultMinQty());
+    }
+
+    @Test
+    void aProductWithoutAnAgreedMinimumKeepsItNull() {
+        // Nulo significa "sem numero combinado": o slot fica com o proprio
+        // default em vez de herdar um zero inventado aqui.
+        when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ProductDto body = new ProductDto(null, "Produto novo", null, 100.0, 5.0, null, null, true);
+        ProductDto result = productController.create(body);
+
+        assertNull(result.defaultMinQty());
+    }
+
+    @Test
     void createStampsTheAuthenticatedStoreOnTheProduct() {
         when(productRepository.save(any(Product.class))).thenAnswer(inv -> {
             Product saved = inv.getArgument(0);
@@ -77,7 +102,7 @@ class ProductControllerTest {
             return saved;
         });
 
-        ProductDto body = new ProductDto(null, "Feijao 1kg", "FJO-1KG", 1000.0, 15.0, 890, true);
+        ProductDto body = new ProductDto(null, "Feijao 1kg", "FJO-1KG", 1000.0, 15.0, 6, 890, true);
         ProductDto created = productController.create(body);
 
         assertNotNull(created.id());
@@ -90,7 +115,7 @@ class ProductControllerTest {
         when(productRepository.findByIdAndStoreId(otherId, storeA)).thenReturn(Optional.empty());
 
         assertThrows(ResponseStatusException.class, () -> productController.update(otherId,
-                new ProductDto(null, "X", null, 100.0, 5.0, null, true)));
+                new ProductDto(null, "X", null, 100.0, 5.0, null, null, true)));
     }
 
     @Test

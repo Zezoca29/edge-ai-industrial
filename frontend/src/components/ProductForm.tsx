@@ -8,6 +8,7 @@ interface Props {
     sku: string | null;
     unitWeightG: number;
     toleranceG: number;
+    defaultMinQty: number | null;
     unitPriceCents: number | null;
     active: boolean;
   }) => Promise<void>;
@@ -28,6 +29,7 @@ export function ProductForm({ onCreate }: Props) {
   const [sku, setSku] = useState('');
   const [unitWeightG, setUnitWeightG] = useState('');
   const [toleranceG, setToleranceG] = useState('');
+  const [minQty, setMinQty] = useState('');
   const [priceReais, setPriceReais] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -47,6 +49,13 @@ export function ProductForm({ onCreate }: Props) {
       return setError('Tolerância deve ser maior que zero.');
     }
 
+    // Em branco significa "sem mínimo combinado" — a prateleira fica com o
+    // próprio padrão. Zero é um valor legítimo (repor só quando acabar).
+    const min = minQty.trim() === '' ? null : Number(minQty);
+    if (min !== null && (!Number.isInteger(min) || min < 0)) {
+      return setError('Mínimo para repor deve ser um número inteiro de 0 para cima.');
+    }
+
     setSaving(true);
     try {
       await onCreate({
@@ -54,10 +63,12 @@ export function ProductForm({ onCreate }: Props) {
         sku: sku.trim() || null,
         unitWeightG: weight,
         toleranceG: tolerance,
+        defaultMinQty: min,
         unitPriceCents: priceReais ? Math.round(Number(priceReais) * 100) : null,
         active: true,
       });
-      setName(''); setSku(''); setUnitWeightG(''); setToleranceG(''); setPriceReais('');
+      setName(''); setSku(''); setUnitWeightG(''); setToleranceG('');
+      setMinQty(''); setPriceReais('');
     } catch {
       setError('Não foi possível salvar o produto. Verifique se o SKU já não está em uso.');
     } finally {
@@ -94,6 +105,18 @@ export function ProductForm({ onCreate }: Props) {
           className="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm text-white" />
         <span id="product-tolerance-help" className="text-xs text-gray-500">
           Em branco usa {suggestedTolerance} g (1,5% do peso)
+        </span>
+      </div>
+      <div className="flex flex-col gap-1">
+        <label htmlFor="product-min-qty" className="text-xs text-gray-400">
+          Mínimo para repor <span className="text-gray-500">— opcional</span>
+        </label>
+        <input id="product-min-qty" value={minQty} onChange={(e) => setMinQty(e.target.value)}
+          type="number" min={0} step={1}
+          aria-describedby="product-min-qty-help"
+          className="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm text-white w-32" />
+        <span id="product-min-qty-help" className="text-xs text-gray-500">
+          Adotado pela prateleira ao vincular este produto
         </span>
       </div>
       <div className="flex flex-col gap-1">

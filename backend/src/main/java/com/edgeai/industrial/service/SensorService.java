@@ -26,27 +26,29 @@ public class SensorService {
 
         SensorPayloadDto.Sensors s = payload.getSensors();
 
-        sensorDataRepository.insert(time, device.getId(), device.getName(),
-                "temperature", s.getTemperature().getValue(), s.getTemperature().getUnit(),
-                classification, anomalyScore);
-
-        sensorDataRepository.insert(time, device.getId(), device.getName(),
-                "vibration", s.getVibration().getValue(), s.getVibration().getUnit(),
-                classification, anomalyScore);
-
-        sensorDataRepository.insert(time, device.getId(), device.getName(),
-                "current", s.getCurrent().getValue(), s.getCurrent().getUnit(),
-                classification, anomalyScore);
+        // Cada grandeza e opcional. Um no de prateleira carrega celula de carga
+        // e mais nada; desreferenciar temperature nele estourava NPE e levava
+        // junto a leitura de peso, que era a unica coisa que ele tinha a dizer.
+        insertIfPresent(time, device, "temperature", s.getTemperature(), classification, anomalyScore);
+        insertIfPresent(time, device, "vibration", s.getVibration(), classification, anomalyScore);
+        insertIfPresent(time, device, "current", s.getCurrent(), classification, anomalyScore);
+        insertIfPresent(time, device, "weight", s.getWeight(), classification, anomalyScore);
 
         if (s.getWeight() != null) {
-            sensorDataRepository.insert(time, device.getId(), device.getName(),
-                    "weight", s.getWeight().getValue(), s.getWeight().getUnit(),
-                    classification, anomalyScore);
-
             double weightG = ShelfCalculator.toGrams(s.getWeight().getValue(), s.getWeight().getUnit());
             boolean stable = !Boolean.FALSE.equals(s.getWeightStable());
             shelfService.processWeight(device.getId(), time, weightG, stable);
         }
+    }
+
+    private void insertIfPresent(OffsetDateTime time, Device device, String sensorType,
+                                 SensorPayloadDto.SensorValue value,
+                                 String classification, double anomalyScore) {
+        if (value == null) {
+            return;
+        }
+        sensorDataRepository.insert(time, device.getId(), device.getName(),
+                sensorType, value.getValue(), value.getUnit(), classification, anomalyScore);
     }
 
     public List<SensorReadingDto> getReadings(UUID deviceId, UUID storeId,

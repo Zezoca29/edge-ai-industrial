@@ -92,11 +92,15 @@ class StoreIsolationIntegrationTest {
         try (Connection conn = DriverManager.getConnection(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
              Statement st = conn.createStatement()) {
-            // V002 and V005 only seed demo rows; this test seeds its own two stores.
+            // V002, V005 and V007 only seed demo rows; this test seeds its own
+            // two stores. V009 is listed because it adds a column: leaving it
+            // out gives Product an unmapped field and every products query
+            // fails with "column default_min_qty does not exist".
             for (String file : List.of("V001__initial_schema.sql",
                                        "V003__pick_events.sql",
                                        "V004__retail_domain.sql",
-                                       "V008__alerts_and_push.sql")) {
+                                       "V008__alerts_and_push.sql",
+                                       "V009__product_default_min_qty.sql")) {
                 st.execute(Files.readString(migrations.resolve(file)));
             }
         }

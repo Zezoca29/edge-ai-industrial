@@ -58,3 +58,19 @@ jobs:
           DB_NAME: edgeai_test
           DB_USERNAME: edgeai
           DB_PASSWORD: edgeai
+
+      # "BUILD SUCCESSFUL" nao distingue passou de pulou, e o teste de
+      # isolamento se auto-desabilita sem Docker. Sem este resumo nao da para
+      # saber, olhando o log, se a cobertura contra banco real aconteceu.
+      - name: Resumo dos testes
+        if: always()
+        working-directory: backend
+        run: python3 scripts/test_summary.py | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Publicar resultados dos testes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: backend/build/test-results/test/
+          retention-days: 7

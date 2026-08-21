@@ -81,6 +81,52 @@ class ShelfSlotControllerTest {
     }
 
     @Test
+    void bindingAProductAdoptsItsDefaultMinimumWhenTheCallerSendsNone() {
+        // O minimo combinado na loja e uma propriedade do PRODUTO ("arroz:
+        // repor com 5 unidades", V007), nao da prateleira. Antes disto o numero
+        // so existia num comentario de migracao: o slot nascia no DEFAULT 3 do
+        // V004 e ficava assim ate alguem digitar o valor certo na tela.
+        UUID slotId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+        ShelfSlot slot = existingSlot(slotId, null, null);
+        Product rice = product(productId, storeA, "Arroz 5 kg");
+        rice.setDefaultMinQty(5);
+
+        when(shelfSlotRepository.findByIdAndStoreId(slotId, storeA)).thenReturn(Optional.of(slot));
+        when(productRepository.findByIdAndStoreId(productId, storeA)).thenReturn(Optional.of(rice));
+        when(shelfSlotRepository.save(any(ShelfSlot.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ShelfSlotDto body = new ShelfSlotDto(null, null, null, productId, null, null, null, null, null, null);
+        ShelfSlotDto result = shelfSlotController.update(slotId, body);
+
+        assertEquals(5, result.minQty());
+    }
+
+    @Test
+    void reSavingASlotDoesNotUndoAMinimumTheShopkeeperCustomised() {
+        // O default do produto e um ponto de partida, nao uma regra. Se o
+        // lojista subiu o minimo do arroz para 8 na tela, salvar o slot de novo
+        // sem tocar no minimo (mudando so a tara, por exemplo) nao pode
+        // arrastar o numero de volta para os 5 combinados no P0: o valor dele e
+        // mais recente e mais especifico. O default so vale no vinculo.
+        UUID slotId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+        ShelfSlot slot = existingSlot(slotId, productId, 9);
+        slot.setMinQty(8);
+        Product rice = product(productId, storeA, "Arroz 5 kg");
+        rice.setDefaultMinQty(5);
+
+        when(shelfSlotRepository.findByIdAndStoreId(slotId, storeA)).thenReturn(Optional.of(slot));
+        when(productRepository.findByIdAndStoreId(productId, storeA)).thenReturn(Optional.of(rice));
+        when(shelfSlotRepository.save(any(ShelfSlot.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ShelfSlotDto body = new ShelfSlotDto(null, null, null, productId, null, null, null, null, null, null);
+        ShelfSlotDto result = shelfSlotController.update(slotId, body);
+
+        assertEquals(8, result.minQty());
+    }
+
+    @Test
     void bindingADifferentProductToASlotClearsCurrentQty() {
         UUID slotId = UUID.randomUUID();
         UUID oldProductId = UUID.randomUUID();

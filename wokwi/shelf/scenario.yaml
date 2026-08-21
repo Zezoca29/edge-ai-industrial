@@ -1,0 +1,124 @@
+name: 'Balanca de prateleira - validacao do P2'
+version: 1
+author: 'Edge AI Industrial - UNIVESP PI-5'
+
+# Roteiro que percorre, em ordem, tudo o que o P2 precisa saber antes da compra.
+#
+#   wokwi-cli --scenario scenario.yaml --timeout 300000 wokwi/shelf
+#
+# O timeout precisa ser generoso: a caracterizacao sozinha coleta 60 leituras.
+#
+# As cargas incluem a BANDEJA (1,2 kg de MDF 15 mm em 30x40 cm), porque no
+# simulador a bandeja faz parte da carga - e e ela que permite testar o caso
+# "alguem levantou a bandeja para limpar".
+#
+#   bandeja vazia ............  1,2 kg
+#   bandeja + 5 pacotes ...... 26,2 kg
+#   bandeja + 4 pacotes ...... 21,2 kg
+#   bandeja + 3 pacotes ...... 16,2 kg
+#   bandeja + 3,5 pacotes .... 18,7 kg   (carga fora do degrau)
+#   bandeja levantada ........  0,0 kg
+
+steps:
+  - wait-serial: 'Bancada da balanca'
+
+  # ---------------------------------------------------------------------
+  # ATO 1 - Tara com a bandeja vazia
+  # ---------------------------------------------------------------------
+  - set-control:
+      part-id: scale1
+      control: load
+      value: 1.2
+  - delay: 4s
+  - set-control:
+      part-id: btn_tare
+      control: pressed
+      value: 1
+  - delay: 300ms
+  - set-control:
+      part-id: btn_tare
+      control: pressed
+      value: 0
+  - wait-serial: '[TARA] tare_g'
+
+  # ---------------------------------------------------------------------
+  # ATO 2 - 5 pacotes com os numeros que estao no projeto hoje
+  #
+  # Esperado: FALHA SILENCIOSA. A janela de estabilidade de 10 g nunca fecha
+  # com ruido de +/- 400 g, entao processWeight() sai na primeira linha e
+  # nenhuma leitura chega a ser contada. Nao ha erro em log nenhum: o sintoma
+  # no campo e so "nunca chega notificacao".
+  # ---------------------------------------------------------------------
+  - set-control:
+      part-id: scale1
+      control: load
+      value: 26.2
+  - wait-serial: "INSTAVEL, backend descarta  (rode 'c')"
+
+  # ---------------------------------------------------------------------
+  # ATO 3 - Caracterizar
+  #
+  # Mede o ruido do conjunto parado e deriva tolerance_g e a janela de
+  # estabilidade do limite superior de 95% do sigma. Imprime o UPDATE pronto.
+  # ---------------------------------------------------------------------
+  - write-serial: 'c'
+  - wait-serial: 'UPDATE products SET tolerance_g'
+
+  # ---------------------------------------------------------------------
+  # ATO 4 - Mesma cena, agora com os numeros derivados
+  # Esperado: leituras estaveis, qty = 5, sem suspeita.
+  # ---------------------------------------------------------------------
+  - delay: 20s
+
+  # ---------------------------------------------------------------------
+  # ATO 5 - Analise dos quatro cantos
+  #
+  # Move a carga para a borda e depois para um canto. A soma nao muda - e a
+  # decisao de projeto do P2, demonstrada. Confere tambem a folga da celula.
+  # ---------------------------------------------------------------------
+  - write-serial: 'p'
+  - wait-serial: '[CANTOS]'
+  - write-serial: 'p'
+  - wait-serial: 'pior canto'
+
+  # ---------------------------------------------------------------------
+  # ATO 6 - Alguem leva um pacote (5 -> 4)
+  # ---------------------------------------------------------------------
+  - set-control:
+      part-id: scale1
+      control: load
+      value: 21.2
+  - wait-serial: 'PICK EVENT'
+
+  # ---------------------------------------------------------------------
+  # ATO 7 - Cai ate o minimo (4 -> 3, min_qty = 3)
+  # Esperado: pick event e alerta de estoque baixo, uma unica vez.
+  # ---------------------------------------------------------------------
+  - set-control:
+      part-id: scale1
+      control: load
+      value: 16.2
+  - wait-serial: 'ALERTA estoque baixo'
+
+  # ---------------------------------------------------------------------
+  # ATO 8 - Carga fora do degrau (3,5 pacotes)
+  # Um pacote aberto, ou dois apoiados meio para fora. Resto de ~2500 g
+  # contra tolerancia de 500 g.
+  # Esperado: SUSPEITA - sem pick event inventado, sem alerta inventado.
+  # ---------------------------------------------------------------------
+  - set-control:
+      part-id: scale1
+      control: load
+      value: 18.7
+  - wait-serial: 'SUSPEITA'
+
+  # ---------------------------------------------------------------------
+  # ATO 9 - Bandeja levantada para limpeza
+  # Peso abaixo da tara. Esperado: SUSPEITA e qty 0, sem anunciar
+  # "restam 0 unidades" no celular do comerciante.
+  # ---------------------------------------------------------------------
+  - set-control:
+      part-id: scale1
+      control: load
+      value: 0.0
+  - wait-serial: 'SUSPEITA'

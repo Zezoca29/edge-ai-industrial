@@ -34,7 +34,7 @@ export default function SettingsPage() {
     await reload();
   }
 
-  function handleBind(slotId: string, productId: string | null, minQty: number) {
+  function handleBind(slotId: string, productId: string | null, minQty: number | null) {
     setActionError(null);
     apiClient
       .updateShelfSlot(slotId, { productId, minQty })
@@ -81,6 +81,9 @@ export default function SettingsPage() {
               {products.map((p) => (
                 <li key={p.id} className="text-sm text-gray-200">
                   {p.name} — {p.unitWeightG}g por unidade
+                  {p.defaultMinQty !== null && (
+                    <span className="text-gray-400"> · repor com {p.defaultMinQty}</span>
+                  )}
                 </li>
               ))}
             </ul>

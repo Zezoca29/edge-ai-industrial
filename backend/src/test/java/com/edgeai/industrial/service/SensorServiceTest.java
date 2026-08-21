@@ -81,6 +81,44 @@ class SensorServiceTest {
         return payload;
     }
 
+    /** Payload do no de prateleira do P2: celula de carga e mais nada. */
+    private SensorPayloadDto makeWeightOnlyPayload() {
+        SensorPayloadDto payload = new SensorPayloadDto();
+        payload.setDeviceId("esp32-shelf-001");
+        payload.setTimestamp(Instant.now());
+
+        SensorPayloadDto.Sensors sensors = new SensorPayloadDto.Sensors();
+        SensorPayloadDto.SensorValue weight = new SensorPayloadDto.SensorValue();
+        weight.setValue(4.75);
+        weight.setUnit("kg");
+        sensors.setWeight(weight);
+        payload.setSensors(sensors);
+
+        SensorPayloadDto.Inference inference = new SensorPayloadDto.Inference();
+        inference.setClassification("normal");
+        inference.setAnomalyScore(0.05);
+        payload.setInference(inference);
+
+        return payload;
+    }
+
+    @Test
+    void saveSensorPayloadAcceptsAShelfNodeThatReportsOnlyWeight() {
+        // Um no de prateleira nao tem DHT22 nem sensor de corrente. Sem esta
+        // guarda o consumidor estourava NullPointerException ao desreferenciar
+        // temperature, e a leitura de peso se perdia junto com a excecao.
+        Device device = makeDevice();
+        SensorPayloadDto payload = makeWeightOnlyPayload();
+
+        sensorService.saveSensorPayload(device, payload);
+
+        verify(sensorDataRepository, times(1)).insert(
+                any(), eq(device.getId()), eq(device.getName()),
+                eq("weight"), eq(4.75), eq("kg"), eq("normal"), eq(0.05));
+        verify(shelfService, times(1)).processWeight(
+                eq(device.getId()), any(OffsetDateTime.class), eq(4750.0), eq(true));
+    }
+
     @Test
     void saveSensorPayloadInsertsFourRowsWithWeight() {
         Device device = makeDevice();
