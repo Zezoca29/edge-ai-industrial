@@ -73,23 +73,70 @@ multi-slot.
 
 ---
 
-## A tolerancia no banco precisa mudar por causa desta escolha
+## Dois numeros no projeto precisam mudar por causa desta escolha
+
+**Correcao de 2026-08-21, apos simular o conjunto no Wokwi.** A versao anterior desta
+secao apontava so o `tolerance_g` do banco. Simulando a bancada com o ruido injetado,
+ficou claro que a tolerancia **nem chega a ser avaliada**: quem barra a leitura antes
+e a janela de estabilidade do firmware. Corrigir so o banco nao resolveria nada.
 
 As celulas baratas especificam erro de **0,2% do fundo de escala**. Quatro de 50 kg
-formam uma plataforma de 200 kg, portanto o erro absoluto e de cerca de **+/- 400 g**.
+formam uma plataforma de 200 kg, portanto o erro e de cerca de **+/- 400 g por
+amostra**. Com media de 10 amostras por leitura publicada, o desvio de uma leitura
+cai para cerca de **125 g**. E esse o numero que importa daqui para a frente.
 
-O `tolerance_g` semeado para o arroz no `V007` e **75 g**. Com 400 g de erro real,
-toda leitura cairia fora da tolerancia e seria marcada como `suspect` — e o P3
-suprime alertas em leitura suspeita, justamente para nao anunciar "restam 0 unidades"
-quando alguem levanta a bandeja. O resultado seria um sistema silencioso, cujo sintoma
-("nunca chega notificacao") e dos mais dificeis de diagnosticar.
+### O que barra primeiro: a estabilidade, que ainda nem existe
 
-Detectar o degrau de 5 kg continua trivial: 400 g de erro contra 5.000 g de passo,
-com zona morta de 0,6 unidade. O que muda e so a tolerancia.
+Antes da tolerancia, `ShelfService.processWeight` descarta leitura instavel **na
+primeira linha**, antes de olhar peso, produto ou tolerancia. E aqui esta o problema:
+o firmware de producao (`firmware/`) **nao tem nenhum caminho de peso** — sem HX711,
+sem celula de carga, sem `weight_stable`. Quem produz peso hoje e so o sketch do
+Wokwi e o simulador Python.
 
-**Ao calibrar a bancada, ajustar `products.tolerance_g` do arroz para algo entre 400
-e 600 g**, medindo a dispersao real em vez de adotar o numero nominal. O mesmo vale
-para os demais produtos se forem instrumentados depois.
+Isso deixa duas saidas, e **as duas obvias falham**:
+
+- **Adotar o criterio que ja existe no sketch** (`WEIGHT_STABLE_TOLERANCE_KG = 0.010`,
+  ou seja 10 g entre leituras consecutivas). Com 125 g de desvio isso nunca fecha:
+  **zero em 20.000 leituras** simuladas. Nenhuma leitura chega a ser contada.
+- **Omitir o campo.** O backend trata ausente como estavel
+  (`!Boolean.FALSE.equals(...)` devolve `true` para `null`), entao toda leitura ruidosa
+  passa direto e so a tolerancia segura — que a 75 g marca mais da metade como suspeita.
+
+Nos dois casos nenhum erro aparece em log nenhum. O sintoma e so "nunca chega
+notificacao" — que e por isso mesmo dos mais dificeis de diagnosticar.
+
+A saida e a terceira: **janela dimensionada pelo ruido medido**, escrita junto com o
+caminho de peso do firmware.
+
+### O segundo: a tolerancia no banco
+
+O `tolerance_g` semeado para o arroz no `V007` e **75 g**. Contra 125 g de desvio,
+**56% das leituras** cairiam fora e seriam marcadas como `suspect` — nao *todas*, como
+dizia a versao anterior desta secao, mas mais da metade. E o P3 suprime alertas em
+leitura suspeita, justamente para nao anunciar "restam 0 unidades" quando alguem
+levanta a bandeja.
+
+### Detectar o pacote continua trivial
+
+125 g de desvio contra 5.000 g de degrau, com zona morta de 0,6 unidade. A escolha das
+quatro celulas nao esta em risco; o que muda sao so os dois limiares.
+
+### Os valores
+
+A bancada simulada em [`wokwi/shelf/`](../../wokwi/shelf/) mede o ruido do conjunto
+parado e deriva os dois do limite superior de 95% do desvio medido:
+
+| Numero | Onde fica | Hoje | Derivado na simulacao |
+|---|---|---|---|
+| `products.tolerance_g` do arroz | banco, `V007` | 75 g (chute) | **500 g** |
+| janela de estabilidade | firmware | nao existe; 10 g no sketch | **450 g** |
+
+**Nao adote estes numeros direto.** Eles saem do ruido *simulado*, e o Wokwi nao
+reproduz a fisica do conjunto montado. Rode a mesma caracterizacao na bancada real —
+e o passo 4 da secao Calibracao — e use o que ela medir. O procedimento e o
+entregavel; os numeros acima sao so a ordem de grandeza a esperar.
+
+O mesmo vale para os demais produtos se forem instrumentados depois.
 
 ---
 
@@ -115,13 +162,16 @@ Confira a orientação indicada pelo fabricante em cada célula; montá-las com 
 1. Bandeja vazia montada → esse valor é a **tara**, gravada pelo botão "Tarar" em `/dashboard/settings`.
 2. Peso conhecido em cima (um pacote de arroz já pesado na balança de cozinha) → ajusta o fator de escala do HX711 no firmware.
 3. **Pesar três pacotes diferentes e usar a média** como `unit_weight_g`. Hoje o valor no banco é 5000 g nominal. Pacote de 5 kg varia mais que o de 1 kg.
-4. **Medir o ruído do conjunto montado**: deixe a bandeja carregada e parada e observe a variação das leituras por alguns minutos. Esse número, e não a variação dos pacotes, é o que dita `tolerance_g` — com quatro células baratas ele deve ficar na casa das centenas de gramas, conforme a seção acima.
-5. Repetir a leitura com 1, 2, 3, 4 e 5 pacotes e conferir se a contagem bate. É esse teste que responde "não dá alerta falso".
+4. **Caracterizar o ruído do conjunto montado**: deixe a bandeja carregada e parada e rode o comando `c` da bancada ([`wokwi/shelf/`](../../wokwi/shelf/)). Ele coleta 60 leituras, calcula o desvio e deriva **os dois limiares de uma vez**, imprimindo o `UPDATE` pronto para colar. Esse número, e não a variação entre pacotes, é o que dita `tolerance_g` **e** a janela de estabilidade.
+5. **Gravar os dois.** `products.tolerance_g` vai no banco; a janela de estabilidade vai no firmware. Gravar só um deixa o sistema mudo, pelo motivo explicado na seção acima.
+6. Repetir a leitura com 1, 2, 3, 4 e 5 pacotes e conferir se a contagem bate. É esse teste que responde "não dá alerta falso".
 
 ---
 
 ## O que continua em aberto
 
 - A entrevista que originou estes números foi **simulada**. Carta de validação, fotos da gôndola e medição real do peso unitário seguem pendentes.
-- `tolerance_g = 75` para o arroz é chute e, pior, é uma ordem de grandeza abaixo do ruído esperado das células escolhidas. Substituir pelo ruído medido na bancada montada, sob pena de o sistema marcar toda leitura como suspeita e nunca alertar.
+- **O firmware de produção não lê peso.** Não há HX711 nem célula de carga em `firmware/`; o caminho de peso existe só no sketch do Wokwi e no simulador Python. Escrevê-lo é trabalho pendente, e ele precisa nascer com a janela de estabilidade dimensionada — ver a seção acima para por que tanto adotar os 10 g do sketch quanto omitir o campo deixam o sistema mudo.
+- `tolerance_g = 75` para o arroz continua sendo chute, e um chute que a simulação reprovou. Substituir pelo que a caracterização medir na bancada montada. Corrigir só ele, sem a janela, não resolve nada.
+- Os valores derivados na simulação (500 g e 450 g) saem de ruído sintético, não de hardware. Servem como ordem de grandeza a esperar, não como valores de produção.
 - Restrição de instalação registrada: sem fio atravessando corredor, Wi-Fi disponível na loja, tomada próxima mas não adjacente.
