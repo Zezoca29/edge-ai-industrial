@@ -65,7 +65,7 @@ jobs:
       - name: Resumo dos testes
         if: always()
         working-directory: backend
-        run: python3 scripts/test_summary.py >> "$GITHUB_STEP_SUMMARY"
+        run: python3 scripts/test_summary.py | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Publicar resultados dos testes
         if: always()
