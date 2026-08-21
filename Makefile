@@ -3,7 +3,7 @@
 # Comandos úteis para desenvolvimento
 # ============================================
 
-.PHONY: help up down backend frontend firmware logs clean
+.PHONY: help up down backend frontend firmware logs clean db-migrate
 
 help: ## Mostra esta ajuda
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -21,6 +21,10 @@ logs: ## Mostra logs dos containers
 
 clean: ## Remove containers e volumes
 	docker-compose down -v
+
+db-migrate: ## Aplica as migracoes num banco JA EXISTENTE (o initdb so roda em volume novo)
+	@for f in database/migrations/V*.sql; do echo "  aplicando $$(basename $$f)"; docker exec -i edgeai-postgres psql -U edgeai -d edgeai -v ON_ERROR_STOP=1 -q < $$f || exit 1; done
+	@echo "migracoes aplicadas"
 
 # === Backend ===
 
