@@ -66,12 +66,16 @@ public class ProductController {
         product.setSku(body.sku());
         product.setUnitWeightG(body.unitWeightG());
         product.setToleranceG(body.toleranceG() == null ? 5.0 : body.toleranceG());
+        // Sem default aqui de proposito: nulo significa "sem minimo combinado",
+        // e o slot fica com o proprio default em vez de herdar um numero
+        // inventado pelo backend.
+        product.setDefaultMinQty(body.defaultMinQty());
         product.setUnitPriceCents(body.unitPriceCents());
         product.setActive(body.active() == null || body.active());
     }
 
     private static ProductDto toDto(Product p) {
         return new ProductDto(p.getId(), p.getName(), p.getSku(), p.getUnitWeightG(),
-                p.getToleranceG(), p.getUnitPriceCents(), p.getActive());
+                p.getToleranceG(), p.getDefaultMinQty(), p.getUnitPriceCents(), p.getActive());
     }
 }

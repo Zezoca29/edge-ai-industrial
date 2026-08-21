@@ -8,6 +8,13 @@ public record ProductDto(
         String sku,
         Double unitWeightG,
         Double toleranceG,
+
+        /**
+         * Minimo de reposicao combinado na loja. Um slot adota este numero
+         * quando o produto lhe e vinculado. Nulo = sem numero combinado.
+         */
+        Integer defaultMinQty,
+
         Integer unitPriceCents,
         Boolean active
 ) {

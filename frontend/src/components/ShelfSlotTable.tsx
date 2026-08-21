@@ -5,7 +5,9 @@ import { Product, ShelfSlot } from '@/types';
 interface Props {
   slots: ShelfSlot[];
   products: Product[];
-  onBind: (slotId: string, productId: string | null, minQty: number) => void;
+  /** minQty nulo deixa o minimo a cargo do backend: ao trocar de produto
+   *  ele adota o minimo combinado daquele produto. */
+  onBind: (slotId: string, productId: string | null, minQty: number | null) => void;
   onTare: (slotId: string) => void;
 }
 
@@ -37,7 +39,7 @@ export function ShelfSlotTable({ slots, products, onBind, onTare }: Props) {
               <select
                 id={`slot-product-${slot.id}`}
                 value={slot.productId ?? ''}
-                onChange={(e) => onBind(slot.id, e.target.value || null, slot.minQty)}
+                onChange={(e) => onBind(slot.id, e.target.value || null, null)}
                 className="bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm"
               >
                 <option value="">Não configurado</option>
@@ -52,6 +54,7 @@ export function ShelfSlotTable({ slots, products, onBind, onTare }: Props) {
               </label>
               <input
                 id={`slot-min-${slot.id}`}
+                key={`${slot.id}-${slot.minQty}`}
                 type="number"
                 min={0}
                 defaultValue={slot.minQty}

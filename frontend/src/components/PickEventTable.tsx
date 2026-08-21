@@ -27,7 +27,7 @@ export function PickEventTable({ picks }: PickEventTableProps) {
           </tr>
         </thead>
         <tbody>
-          {picks.map((p, i) => {
+          {picks.map((p) => {
             const confPercent = (p.confidence * 100).toFixed(0);
             const isHigh = p.confidence >= 0.85;
             return (
