@@ -22,9 +22,12 @@ logs: ## Mostra logs dos containers
 clean: ## Remove containers e volumes
 	docker-compose down -v
 
+# Chamada unica a um script: um laco de shell aqui quebraria no PowerShell,
+# onde make nao encontra sh e cai no cmd.exe.
+PYTHON ?= python
+
 db-migrate: ## Aplica as migracoes num banco JA EXISTENTE (o initdb so roda em volume novo)
-	@for f in database/migrations/V*.sql; do echo "  aplicando $$(basename $$f)"; docker exec -i edgeai-postgres psql -U edgeai -d edgeai -v ON_ERROR_STOP=1 -q < $$f || exit 1; done
-	@echo "migracoes aplicadas"
+	$(PYTHON) database/apply_migrations.py
 
 # === Backend ===
 
