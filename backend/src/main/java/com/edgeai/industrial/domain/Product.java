@@ -40,6 +40,14 @@ public class Product {
     @Column(name = "unit_price_cents")
     private Integer unitPriceCents;
 
+    /**
+     * Minimo de reposicao combinado na loja, por produto. Um slot adota este
+     * numero quando o produto lhe e vinculado e nenhum minimo e enviado junto.
+     * Nulo significa "sem numero combinado": o slot fica com o proprio default.
+     */
+    @Column(name = "default_min_qty")
+    private Integer defaultMinQty;
+
     @Column(nullable = false)
     private Boolean active = true;
 

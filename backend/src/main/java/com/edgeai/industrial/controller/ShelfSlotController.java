@@ -38,8 +38,9 @@ public class ShelfSlotController {
         ShelfSlot slot = shelfSlotRepository.findByIdAndStoreId(id, storeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Slot nao encontrado"));
 
+        Product bound = null;
         if (body.productId() != null) {
-            productRepository.findByIdAndStoreId(body.productId(), storeId)
+            bound = productRepository.findByIdAndStoreId(body.productId(), storeId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Produto de outra loja"));
         }
         // Trocar de produto invalida a contagem anterior; ajustar so o minimo nao.
@@ -47,6 +48,12 @@ public class ShelfSlotController {
         slot.setProductId(body.productId());
         if (body.minQty() != null) {
             slot.setMinQty(body.minQty());
+        } else if (productChanged && bound != null && bound.getDefaultMinQty() != null) {
+            // O minimo combinado na loja e propriedade do produto, e serve de
+            // ponto de partida quando ele estreia num slot. So no vinculo: um
+            // salvamento posterior sem minQty nao pode desfazer o numero que o
+            // lojista ajustou na tela, que e mais recente e mais especifico.
+            slot.setMinQty(bound.getDefaultMinQty());
         }
         if (productChanged) {
             slot.setCurrentQty(null);
