@@ -159,6 +159,38 @@ A bancada continua usando 3, que é o `DEFAULT` com que um slot nasce antes de r
 
 ---
 
+
+## Ver e interagir sem a fila de build do Wokwi
+
+A fila de build gratuita do Wokwi web às vezes engarrafa. Duas alternativas que
+compilam/rodam local:
+
+**Bancada interativa no navegador** — coloque e tire pacotes, veja o peso, a
+contagem e o retorno do backend em tempo real:
+
+```bash
+make bancada   # http://127.0.0.1:8090/bancada-interativa.html
+```
+
+Publica no mesmo broker do ESP32, então o backend e o dashboard reagem junto.
+O `live-panel.html` (mesma URL, outro arquivo) é a versão só-monitor, para
+assistir a um dispositivo real publicando.
+
+**Circuito interativo no VS Code** — extensão "Wokwi Simulator", compilando com
+PlatformIO (sem fila):
+
+```bash
+make sim-build            # compila o firmware.elf/.bin em .pio/
+# VS Code: Ctrl+Shift+P -> "Wokwi: Start Simulator"
+```
+
+O `platformio.ini` desta pasta compila o próprio `sketch.ino` (via `src_dir=.`)
+e liga com `-DDEMO_NO_NOISE`, para o circuito reagir na hora ao arrastar o peso
+no HX711 sem precisar caracterizar. O `wokwi.toml` aponta o simulador para o
+binário gerado. O padrão do projeto (fora desta build) mantém o ruído ligado.
+
+---
+
 ## Verificação
 
 | O quê | Como | Resultado |

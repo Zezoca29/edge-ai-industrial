@@ -3,7 +3,7 @@
 # Comandos úteis para desenvolvimento
 # ============================================
 
-.PHONY: help up down backend frontend firmware logs clean db-migrate
+.PHONY: help up down backend frontend firmware logs clean db-migrate bancada sim-build
 
 help: ## Mostra esta ajuda
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -28,6 +28,17 @@ PYTHON ?= python
 
 db-migrate: ## Aplica as migracoes num banco JA EXISTENTE (o initdb so roda em volume novo)
 	$(PYTHON) database/apply_migrations.py
+
+# === Simulacao / bancada ===
+
+bancada: ## Sobe a bancada interativa e o painel monitor em http://127.0.0.1:8090
+	@echo "Bancada interativa: http://127.0.0.1:8090/bancada-interativa.html"
+	@echo "Painel monitor:     http://127.0.0.1:8090/live-panel.html"
+	@echo "(Ctrl+C para parar)"
+	@cd wokwi/shelf && $(PYTHON) -m http.server 8090 --bind 127.0.0.1
+
+sim-build: ## Compila o firmware da bancada (para o Wokwi no VS Code)
+	@cd wokwi/shelf && pio run
 
 # === Backend ===
 

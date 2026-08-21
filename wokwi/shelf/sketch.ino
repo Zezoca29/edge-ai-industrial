@@ -100,7 +100,15 @@ static bool   characterized = false;
 // 4 celulas de 50 kg = plataforma de 200 kg. Erro especificado de 0,2% do
 // fundo de escala = +/- 400 g por amostra. E o que o Wokwi nao simula e o que
 // decide se o projeto funciona.
+// DEMO_NO_NOISE: build local do Wokwi no VS Code liga com o ruido DESLIGADO,
+// para o circuito reagir na hora ao arrastar o peso, sem precisar caracterizar.
+// O padrao do projeto continua com ruido ligado (o ponto e provar que ele quebra
+// a tolerancia semeada). Ligue/desligue em runtime com 'n'.
+#ifdef DEMO_NO_NOISE
+static bool  noiseEnabled = false;
+#else
 static bool  noiseEnabled = true;
+#endif
 static float noiseSigmaG  = 400.0f;
 
 static const int SAMPLES_PER_READING = 10;   // media de 10 amostras por leitura
