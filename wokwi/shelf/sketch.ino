@@ -100,14 +100,31 @@ static bool   characterized = false;
 // 4 celulas de 50 kg = plataforma de 200 kg. Erro especificado de 0,2% do
 // fundo de escala = +/- 400 g por amostra. E o que o Wokwi nao simula e o que
 // decide se o projeto funciona.
+// DEMO_NO_NOISE: build local do Wokwi no VS Code liga com o ruido DESLIGADO,
+// para o circuito reagir na hora ao arrastar o peso, sem precisar caracterizar.
+// O padrao do projeto continua com ruido ligado (o ponto e provar que ele quebra
+// a tolerancia semeada). Ligue/desligue em runtime com 'n'.
+#ifdef DEMO_NO_NOISE
+static bool  noiseEnabled = false;
+#else
 static bool  noiseEnabled = true;
+#endif
 static float noiseSigmaG  = 400.0f;
 
 static const int SAMPLES_PER_READING = 10;   // media de 10 amostras por leitura
 static const int TARE_SAMPLES        = 40;   // a tara entra em toda leitura futura
 static const int CHAR_READINGS       = 60;   // amostra da caracterizacao
 static const int STABILITY_HISTORY   = 4;    // leituras comparadas entre si
+
+// No build de demo, 2000ms x 4 leituras = 8s so pra registrar estabilidade a
+// cada mudanca de peso. O padrao do projeto mantem 2000ms (o que a bancada
+// fisica real faz); so o DEMO_NO_NOISE acelera a amostragem, pra arrastar o
+// peso e ver a tela reagir em ~1s em vez de ~10s.
+#ifdef DEMO_NO_NOISE
+static const unsigned long READING_MS = 300;
+#else
 static const unsigned long READING_MS = 2000;
+#endif
 
 // === Estado ================================================================
 static HX711  scale;
@@ -123,7 +140,14 @@ static const char* WIFI_SSID = "Wokwi-GUEST";
 static const char* WIFI_PASS = "";
 static const char* MQTT_HOST = "broker.emqx.io";
 static const int   MQTT_PORT = 1883;
-static const char* DEVICE_ID = "wokwi-shelf-001";
+
+// DEVICE_ID_STR vem do platformio.ini (-D DEVICE_ID_STR=\"...\") quando este
+// sketch e compilado para mais de uma esteira; o default cobre o uso de
+// sempre, uma bancada so.
+#ifndef DEVICE_ID_STR
+#define DEVICE_ID_STR "wokwi-shelf-001"
+#endif
+static const char* DEVICE_ID = DEVICE_ID_STR;
 
 static WiFiClient   wifiClient;
 static PubSubClient mqtt(wifiClient);

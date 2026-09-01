@@ -1,7 +1,9 @@
 package com.edgeai.industrial.controller;
 
 import com.edgeai.industrial.domain.Alert;
+import com.edgeai.industrial.domain.Device;
 import com.edgeai.industrial.dto.AlertDto;
+import com.edgeai.industrial.repository.DeviceRepository;
 import com.edgeai.industrial.security.StoreUserDetails;
 import com.edgeai.industrial.service.AlertService;
 import org.junit.jupiter.api.AfterEach;
@@ -25,6 +27,7 @@ import static org.mockito.Mockito.*;
 class AlertControllerTest {
 
     @Mock private AlertService alertService;
+    @Mock private DeviceRepository deviceRepository;
     @InjectMocks private AlertController alertController;
 
     private UUID storeA;
@@ -53,10 +56,14 @@ class AlertControllerTest {
     }
 
     private Alert alert() {
+        return alert(UUID.randomUUID());
+    }
+
+    private Alert alert(UUID deviceId) {
         Alert a = new Alert();
         a.setId(UUID.randomUUID());
         a.setStoreId(storeA);
-        a.setDeviceId(UUID.randomUUID());
+        a.setDeviceId(deviceId);
         a.setAlertType(AlertService.TYPE_STOCK_LOW);
         a.setSeverity("high");
         a.setMessage("Arroz 5 kg: restam 4 unidades, minimo 5");
@@ -91,6 +98,41 @@ class AlertControllerTest {
         alertController.acknowledge(alertId);
 
         verify(alertService).acknowledge(alertId, storeA, userId);
+    }
+
+    /** The dashboard groups alerts under the bancada that raised them, so the
+     *  device has to travel with the alert. Matching on the message text is
+     *  guesswork; the id is already on the entity. */
+    @Test
+    void listCarriesTheDeviceThatRaisedTheAlert() {
+        UUID deviceId = UUID.randomUUID();
+        when(alertService.list(storeA, true)).thenReturn(List.of(alert(deviceId)));
+        when(deviceRepository.findByStoreIdOrderByNameAsc(storeA))
+                .thenReturn(List.of(device(deviceId, "wokwi-shelf-001")));
+
+        AlertDto dto = alertController.list(true).get(0);
+
+        assertEquals(deviceId, dto.deviceId());
+        assertEquals("wokwi-shelf-001", dto.deviceName());
+    }
+
+    /** A device deleted after the alert was raised must not blow up the list. */
+    @Test
+    void listSurvivesAnAlertWhoseDeviceIsGone() {
+        when(alertService.list(storeA, true)).thenReturn(List.of(alert()));
+        when(deviceRepository.findByStoreIdOrderByNameAsc(storeA)).thenReturn(List.of());
+
+        AlertDto dto = alertController.list(true).get(0);
+
+        assertNotNull(dto.deviceId());
+        assertNull(dto.deviceName());
+    }
+
+    private Device device(UUID id, String name) {
+        Device d = new Device();
+        d.setId(id);
+        d.setName(name);
+        return d;
     }
 
     @Test

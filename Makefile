@@ -3,7 +3,7 @@
 # Comandos úteis para desenvolvimento
 # ============================================
 
-.PHONY: help up down backend frontend firmware logs clean db-migrate
+.PHONY: help up down backend frontend firmware logs clean db-migrate bancada sim-build sim-build-fleet
 
 help: ## Mostra esta ajuda
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -22,9 +22,26 @@ logs: ## Mostra logs dos containers
 clean: ## Remove containers e volumes
 	docker-compose down -v
 
+# Chamada unica a um script: um laco de shell aqui quebraria no PowerShell,
+# onde make nao encontra sh e cai no cmd.exe.
+PYTHON ?= python
+
 db-migrate: ## Aplica as migracoes num banco JA EXISTENTE (o initdb so roda em volume novo)
-	@for f in database/migrations/V*.sql; do echo "  aplicando $$(basename $$f)"; docker exec -i edgeai-postgres psql -U edgeai -d edgeai -v ON_ERROR_STOP=1 -q < $$f || exit 1; done
-	@echo "migracoes aplicadas"
+	$(PYTHON) database/apply_migrations.py
+
+# === Simulacao / bancada ===
+
+bancada: ## Sobe a bancada interativa e o painel monitor em http://127.0.0.1:8090
+	@echo "Bancada interativa: http://127.0.0.1:8090/bancada-interativa.html"
+	@echo "Painel monitor:     http://127.0.0.1:8090/live-panel.html"
+	@echo "(Ctrl+C para parar)"
+	@cd wokwi/shelf && $(PYTHON) -m http.server 8090 --bind 127.0.0.1
+
+sim-build: ## Compila o firmware da bancada (para o Wokwi no VS Code)
+	@cd wokwi/shelf && pio run
+
+sim-build-fleet: ## Compila as 4 esteiras (esp32, esp32-2, esp32-3, esp32-4)
+	@cd wokwi/shelf && pio run -e esp32 -e esp32-2 -e esp32-3 -e esp32-4
 
 # === Backend ===
 

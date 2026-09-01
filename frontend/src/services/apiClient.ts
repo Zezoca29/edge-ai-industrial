@@ -75,6 +75,7 @@ export const apiClient = {
       body: JSON.stringify(body),
     }),
   getShelfSlots: () => request<import('@/types').ShelfSlot[]>('/shelf-slots'),
+  deleteProduct: (id: string) => request<void>(`/products/${id}`, { method: 'DELETE' }),
   // minQty nulo = "nao mexa no minimo": ao vincular um produto o backend
   // adota o default dele; nos demais casos o valor atual e preservado.
   updateShelfSlot: (id: string, body: { productId: string | null; minQty: number | null }) =>

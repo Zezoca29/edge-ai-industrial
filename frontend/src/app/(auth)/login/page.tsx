@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiClient } from '@/services/apiClient';
+import { muted } from '@/components/ui/primitives';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -28,37 +29,43 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900">
-      <div className="bg-gray-800 p-8 rounded-lg border border-gray-700 w-full max-w-sm">
-        <h1 className="text-xl font-semibold text-white mb-6">Edge AI Industrial</h1>
+    <div className="flex min-h-screen items-center justify-center px-4">
+      <div className="elev-md w-full max-w-sm rounded-lg p-8" style={{ background: 'var(--color-surface)' }}>
+        <div className="text-[11px] uppercase tracking-[.12em]" style={{ color: muted(45) }}>
+          PJI610 · Edge AI
+        </div>
+        <h4 className="mb-6 mt-1">Bancadas Interativas</h4>
+
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div>
-            <label className="text-xs text-gray-400 mb-1 block">Email</label>
+          <div className="field">
+            <label htmlFor="login-email">Email</label>
             <input
+              id="login-email"
+              className="input"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
               required
             />
           </div>
-          <div>
-            <label className="text-xs text-gray-400 mb-1 block">Senha</label>
+          <div className="field">
+            <label htmlFor="login-password">Senha</label>
             <input
+              id="login-password"
+              className="input"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
               required
             />
           </div>
-          {error && <p className="text-red-400 text-xs">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded px-4 py-2 text-sm font-medium"
-          >
-            {loading ? 'Entrando...' : 'Entrar'}
+          {error && (
+            <p role="alert" className="m-0 text-xs" style={{ color: 'var(--color-crit)' }}>
+              {error}
+            </p>
+          )}
+          <button type="submit" disabled={loading} className="btn btn-primary btn-block min-h-[42px]">
+            {loading ? 'Entrando…' : 'Entrar'}
           </button>
         </form>
       </div>

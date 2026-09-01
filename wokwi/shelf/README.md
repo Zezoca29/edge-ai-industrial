@@ -159,6 +159,75 @@ A bancada continua usando 3, que é o `DEFAULT` com que um slot nasce antes de r
 
 ---
 
+
+## Ver e interagir sem a fila de build do Wokwi
+
+A fila de build gratuita do Wokwi web às vezes engarrafa. Duas alternativas que
+compilam/rodam local:
+
+**Bancada interativa no navegador** — coloque e tire pacotes, veja o peso, a
+contagem e o retorno do backend em tempo real:
+
+```bash
+make bancada   # http://127.0.0.1:8090/bancada-interativa.html
+```
+
+Publica no mesmo broker do ESP32, então o backend e o dashboard reagem junto.
+O `live-panel.html` (mesma URL, outro arquivo) é a versão só-monitor, para
+assistir a um dispositivo real publicando.
+
+**Circuito interativo no VS Code** — extensão "Wokwi Simulator", compilando com
+PlatformIO (sem fila):
+
+```bash
+make sim-build            # compila o firmware.elf/.bin em .pio/
+# VS Code: Ctrl+Shift+P -> "Wokwi: Start Simulator"
+```
+
+O `platformio.ini` desta pasta compila o próprio `sketch.ino` (via `src_dir=.`)
+e liga com `-DDEMO_NO_NOISE`, para o circuito reagir na hora ao arrastar o peso
+no HX711 sem precisar caracterizar. O `wokwi.toml` aponta o simulador para o
+binário gerado. O padrão do projeto (fora desta build) mantém o ruído ligado.
+
+---
+
+## Frota de 4 esteiras
+
+Cada esteira é um dispositivo independente — mesmo circuito, mesmo firmware,
+só o `device_id` muda. Backend e frontend já são genéricos por dispositivo
+(qualquer `device_id` novo se autorregistra na primeira publicação e aparece
+sozinho em `/dashboard/bancadas`), então rodar as 4 juntas não muda nada de
+código fora desta pasta.
+
+```bash
+make sim-build-fleet      # compila esp32 (001), esp32-2/3/4 (002-004)
+```
+
+Isso gera um binário por esteira em `.pio/build/esp32[-N]/`, todos a partir
+do mesmo `sketch.ino` — só o `DEVICE_ID_STR` de cada `env` no
+`platformio.ini` muda (`-D DEVICE_ID_STR=\"wokwi-shelf-00N\"`).
+
+Para rodar as 4 simulações ao mesmo tempo no VS Code, abra uma janela por
+esteira (a esteira 1 é a raiz desta pasta; as outras três estão em
+`fleet/esteira-2`, `fleet/esteira-3`, `fleet/esteira-4`, cada uma com seu
+próprio `wokwi.toml` + `diagram.json` apontando pro binário certo) e rode
+"Wokwi: Start Simulator" em cada janela:
+
+```bash
+code wokwi/shelf                    # esteira 1 (wokwi-shelf-001)
+code wokwi/shelf/fleet/esteira-2    # esteira 2 (wokwi-shelf-002)
+code wokwi/shelf/fleet/esteira-3    # esteira 3 (wokwi-shelf-003)
+code wokwi/shelf/fleet/esteira-4    # esteira 4 (wokwi-shelf-004)
+```
+
+Cada janela publica no mesmo broker (`broker.emqx.io`) com seu próprio
+`device_id`; o dashboard mostra as 4 bancadas assim que a primeira leitura de
+cada uma chegar. `PRODUCT_SKU` no firmware é só log local — o vínculo com
+produto de verdade é feito em `/dashboard/bancadas` (ou no antigo Ajustes),
+igual pra qualquer dispositivo novo.
+
+---
+
 ## Verificação
 
 | O quê | Como | Resultado |

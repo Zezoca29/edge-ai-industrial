@@ -56,6 +56,16 @@ repetir: todas as migrations sao idempotentes (`IF NOT EXISTS`,
 `ON CONFLICT DO NOTHING`), verificado reaplicando a serie tres vezes sem
 duplicar dados.
 
+O alvo chama `database/apply_migrations.py` em vez de um laco de shell porque
+`make` escolhe o shell conforme o ambiente: no Git Bash usa `sh`, no PowerShell
+(onde `sh` nao esta no PATH) cai no `cmd.exe`, que nao entende `for f in ...`.
+
+Onde o executavel do Python nao se chama `python`:
+
+```bash
+make db-migrate PYTHON=python3
+```
+
 ### Comecar do zero
 
 ```bash

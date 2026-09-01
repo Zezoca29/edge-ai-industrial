@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "author": "Edge AI Industrial — UNIVESP PI-5",
+  "editor": "wokwi",
+  "//": "Bancada da balanca de prateleira (P2) — esteira 3. O wokwi-hx711 modela a ponte de Wheatstone JA FECHADA — que e exatamente o que o HX711 enxerga com as 4 celulas de meia-ponte ligadas em anel. A distribuicao entre os cantos e calculada no firmware; ver README.",
+  "parts": [
+    {
+      "type": "board-esp32-devkit-v1",
+      "id": "esp",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-hx711",
+      "id": "scale1",
+      "top": -120,
+      "left": 250,
+      "attrs": { "type": "50kg" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_ok",
+      "top": -80,
+      "left": -120,
+      "attrs": { "color": "green", "label": "Contou" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_sus",
+      "top": -10,
+      "left": -120,
+      "attrs": { "color": "red", "label": "Suspeita" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_ok",
+      "top": -70,
+      "left": -55,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_sus",
+      "top": 0,
+      "left": -55,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn_tare",
+      "top": 190,
+      "left": 250,
+      "attrs": { "color": "blue", "label": "Tarar", "key": "t" }
+    }
+  ],
+  "connections": [
+    [ "scale1:VCC", "esp:3V3", "red", [] ],
+    [ "scale1:GND", "esp:GND.1", "black", [] ],
+    [ "scale1:DT", "esp:RX2", "green", [] ],
+    [ "scale1:SCK", "esp:D4", "blue", [] ],
+
+    [ "led_ok:A", "r_ok:1", "green", [] ],
+    [ "r_ok:2", "esp:D2", "green", [] ],
+    [ "led_ok:C", "esp:GND.2", "black", [] ],
+
+    [ "led_sus:A", "r_sus:1", "red", [] ],
+    [ "r_sus:2", "esp:D5", "red", [] ],
+    [ "led_sus:C", "esp:GND.2", "black", [] ],
+
+    [ "btn_tare:1.l", "esp:D18", "purple", [] ],
+    [ "btn_tare:2.l", "esp:GND.2", "black", [] ]
+  ]
+}
