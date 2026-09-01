@@ -3,7 +3,7 @@
 # Comandos úteis para desenvolvimento
 # ============================================
 
-.PHONY: help up down backend frontend firmware logs clean db-migrate bancada sim-build
+.PHONY: help up down backend frontend firmware logs clean db-migrate bancada sim-build sim-build-fleet
 
 help: ## Mostra esta ajuda
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -39,6 +39,9 @@ bancada: ## Sobe a bancada interativa e o painel monitor em http://127.0.0.1:809
 
 sim-build: ## Compila o firmware da bancada (para o Wokwi no VS Code)
 	@cd wokwi/shelf && pio run
+
+sim-build-fleet: ## Compila as 4 esteiras (esp32, esp32-2, esp32-3, esp32-4)
+	@cd wokwi/shelf && pio run -e esp32 -e esp32-2 -e esp32-3 -e esp32-4
 
 # === Backend ===
 

@@ -115,7 +115,16 @@ static const int SAMPLES_PER_READING = 10;   // media de 10 amostras por leitura
 static const int TARE_SAMPLES        = 40;   // a tara entra em toda leitura futura
 static const int CHAR_READINGS       = 60;   // amostra da caracterizacao
 static const int STABILITY_HISTORY   = 4;    // leituras comparadas entre si
+
+// No build de demo, 2000ms x 4 leituras = 8s so pra registrar estabilidade a
+// cada mudanca de peso. O padrao do projeto mantem 2000ms (o que a bancada
+// fisica real faz); so o DEMO_NO_NOISE acelera a amostragem, pra arrastar o
+// peso e ver a tela reagir em ~1s em vez de ~10s.
+#ifdef DEMO_NO_NOISE
+static const unsigned long READING_MS = 300;
+#else
 static const unsigned long READING_MS = 2000;
+#endif
 
 // === Estado ================================================================
 static HX711  scale;
@@ -131,7 +140,14 @@ static const char* WIFI_SSID = "Wokwi-GUEST";
 static const char* WIFI_PASS = "";
 static const char* MQTT_HOST = "broker.emqx.io";
 static const int   MQTT_PORT = 1883;
-static const char* DEVICE_ID = "wokwi-shelf-001";
+
+// DEVICE_ID_STR vem do platformio.ini (-D DEVICE_ID_STR=\"...\") quando este
+// sketch e compilado para mais de uma esteira; o default cobre o uso de
+// sempre, uma bancada so.
+#ifndef DEVICE_ID_STR
+#define DEVICE_ID_STR "wokwi-shelf-001"
+#endif
+static const char* DEVICE_ID = DEVICE_ID_STR;
 
 static WiFiClient   wifiClient;
 static PubSubClient mqtt(wifiClient);
